@@ -3,7 +3,7 @@ extends RefCounted
 
 var stage_index: int = 0
 var max_stages: int = 14
-var deck: DeckState
+var master_deck: Array[GemInstance] = []
 var relic_ids: Array[String] = []
 var gold: int = 0
 var total_gold_earned: int = 0

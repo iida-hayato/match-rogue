@@ -42,9 +42,9 @@ func _ready() -> void:
 		var initial_gems: Array[GemInstance] = []
 		for i in range(100):
 			initial_gems.append(GemInstance.new("red"))
-		mock_run.deck = DeckState.new(initial_gems)
+		var mock_deck = DeckState.new(initial_gems)
 		var mock_plan = StageMaster.create_plan(0)
-		initialize_stage(mock_run, mock_plan)
+		initialize_stage(mock_run, mock_deck, mock_plan)
 
 func _input(event: InputEvent) -> void:
 	if is_animating or selected_pos == null:
@@ -68,10 +68,10 @@ func _input(event: InputEvent) -> void:
 func is_within_bounds(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 
-func initialize_stage(run: Object, plan: Object) -> void:
+func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	print("[StagePlayScreen] Initializing Stage: %d (Target Score: %d)" % [plan.stage_index, plan.target_score])
 	run_state = run
-	deck_state = run.deck
+	deck_state = deck
 	board_state = BoardState.new(8, 8)
 	stage_state = StageState.new()
 	stage_state.target_score = plan.target_score
@@ -311,18 +311,6 @@ func animate_spawns(spawns: Array) -> void:
 
 func check_game_end() -> void:
 	if stage_state.is_cleared():
-		return_board_to_deck()
 		stage_finished.emit(true)
 	elif stage_state.is_game_over():
-		return_board_to_deck()
 		stage_finished.emit(false)
-
-func return_board_to_deck() -> void:
-	print("[StagePlayScreen] Returning all gems on board to discard pile.")
-	for y in range(8):
-		for x in range(8):
-			var gem = board_state.get_gem(x, y)
-			if gem:
-				deck_state.discard(gem)
-				board_state.set_gem(x, y, null)
-	update_deck_ui()

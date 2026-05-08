@@ -22,20 +22,25 @@ func start_new_run() -> void:
 	run_state = RunState.new()
 	setup_initial_deck()
 	load_stage(run_state.stage_index)
-
 func setup_initial_deck() -> void:
-	var initial_gems: Array[GemInstance] = []
+	run_state.master_deck = []
 	var gem_definitions = ["red", "blue", "green", "yellow", "purple"]
 	for def_id in gem_definitions:
 		for i in range(20):
-			initial_gems.append(GemInstance.new(def_id))
-	run_state.deck = DeckState.new(initial_gems)
+			run_state.master_deck.append(GemInstance.new(def_id))
 
 func load_stage(stage_index: int) -> void:
 	print("[MainScene] Loading stage %d" % stage_index)
 	if current_screen:
+		remove_child(current_screen)
 		current_screen.queue_free()
-	
+
+	# Create a fresh DeckState from the master_deck for this stage
+	var stage_gems: Array[GemInstance] = []
+	for gem in run_state.master_deck:
+		stage_gems.append(gem.duplicate())
+	var stage_deck = DeckState.new(stage_gems)
+
 	var plan = StageMaster.create_plan(stage_index)
 	print("[MainScene] Stage Plan: Target=%d, Moves=%d" % [plan.target_score, plan.move_limit])
 	var play_screen_scene = load("res://scenes/screens/stage_play_screen.tscn")
@@ -43,9 +48,10 @@ func load_stage(stage_index: int) -> void:
 	add_child(play_screen)
 	play_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	current_screen = play_screen
-	
-	play_screen.initialize_stage(run_state, plan)
+
+	play_screen.initialize_stage(run_state, stage_deck, plan)
 	play_screen.stage_finished.connect(_on_stage_finished.bind(plan))
+
 
 func _on_stage_finished(success: bool, plan: Object) -> void:
 	if success:
