@@ -5,6 +5,8 @@ const StageMaster = preload("res://scripts/domain/stage_master.gd")
 const GemInstance = preload("res://scripts/domain/gem_instance.gd")
 const DeckState = preload("res://scripts/domain/deck_state.gd")
 
+const ShopService = preload("res://scripts/domain/shop_service.gd")
+
 var run_state: RunState
 var current_screen: Control
 
@@ -36,18 +38,37 @@ func load_stage(stage_index: int) -> void:
 	current_screen = play_screen
 	
 	play_screen.initialize_stage(run_state, plan)
-	play_screen.stage_finished.connect(_on_stage_finished)
+	play_screen.stage_finished.connect(_on_stage_finished.bind(plan))
 
-func _on_stage_finished(success: bool) -> void:
+func _on_stage_finished(success: bool, plan: Object) -> void:
 	if success:
+		# Calculate gold reward
+		var stage_state = current_screen.stage_state
+		var reward = ShopService.calculate_gold_reward(stage_state.score, plan.target_score)
+		run_state.gold += reward
+		run_state.total_gold_earned += reward
+		
 		run_state.stage_index += 1
 		if run_state.stage_index < run_state.max_stages:
-			# For MVP, go straight to next stage or show a simple transition
-			print("Moving to stage %d" % run_state.stage_index)
-			load_stage(run_state.stage_index)
+			load_shop()
 		else:
 			print("Run Completed!")
-			# Show result screen
 	else:
 		print("Game Over!")
-		# Show game over screen
+
+func load_shop() -> void:
+	if current_screen:
+		current_screen.queue_free()
+	
+	var next_plan = StageMaster.create_plan(run_state.stage_index)
+	var shop_screen_scene = load("res://scenes/screens/shop_screen.tscn")
+	var shop_screen = shop_screen_scene.instantiate()
+	add_child(shop_screen)
+	shop_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	current_screen = shop_screen
+	
+	shop_screen.initialize_shop(run_state, next_plan)
+	shop_screen.shop_finished.connect(_on_shop_finished)
+
+func _on_shop_finished() -> void:
+	load_stage(run_state.stage_index)
