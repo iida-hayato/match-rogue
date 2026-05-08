@@ -3,6 +3,9 @@ extends Control
 @onready var board_view: GridContainer = $VBox/MainLayout/BoardArea/BoardView
 @onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+@onready var score_label: Label = $VBox/HUD/ScoreLabel
+@onready var moves_label: Label = $VBox/HUD/MovesLabel
+@onready var gold_label: Label = $VBox/HUD/GoldLabel
 
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
@@ -11,9 +14,12 @@ const MatchResolver = preload("res://scripts/domain/match_resolver.gd")
 const CascadeResolver = preload("res://scripts/domain/cascade_resolver.gd")
 const GemInstance = preload("res://scripts/domain/gem_instance.gd")
 const DeckState = preload("res://scripts/domain/deck_state.gd")
+const StageState = preload("res://scripts/domain/stage_state.gd")
+const ScoreCalculator = preload("res://scripts/domain/score_calculator.gd")
 
 var board_state
 var deck_state
+var stage_state
 var gem_views = [] # 2D array [y][x]
 var selected_pos = null
 
@@ -28,9 +34,11 @@ var color_map = {
 
 func _ready() -> void:
 	board_state = BoardState.new(8, 8)
+	stage_state = StageState.new()
 	setup_initial_deck()
 	setup_board_views()
 	initial_refill()
+	update_hud()
 
 func setup_initial_deck() -> void:
 	var initial_gems: Array[GemInstance] = []
@@ -43,6 +51,11 @@ func setup_initial_deck() -> void:
 func update_deck_ui() -> void:
 	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
 	discard_label.text = "Discard: %d" % deck_state.discard_pile.size()
+
+func update_hud() -> void:
+	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
+	moves_label.text = "Moves: %d" % stage_state.moves_remaining
+	gold_label.text = "Gold: %d" % stage_state.gold_earned
 
 func setup_board_views() -> void:
 	gem_views.resize(8)
@@ -112,6 +125,8 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var matches = MatchResolver.find_matches(board_state)
 	if matches.size() > 0:
 		# Valid swap
+		stage_state.moves_remaining -= 1
+		update_hud()
 		resolve_board()
 	else:
 		# Invalid swap, revert
@@ -120,20 +135,29 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 		update_gem_view(p2.x, p2.y)
 
 func resolve_board() -> void:
+	stage_state.chain_index = 0
 	while true:
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
 		
-		# Clear gems and discard
+		# Calculate score for these matches
+		var cleared_gems = []
 		for m in matches:
 			for pos in m:
 				var gem = board_state.get_gem(pos.x, pos.y)
-				deck_state.discard(gem)
-				board_state.set_gem(pos.x, pos.y, null)
+				if gem:
+					cleared_gems.append(gem)
+					deck_state.discard(gem)
+					board_state.set_gem(pos.x, pos.y, null)
+		
+		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index)
+		stage_state.score += score_result.delta
+		stage_state.chain_index += 1
 		
 		update_all_views()
 		update_deck_ui()
+		update_hud()
 		
 		CascadeResolver.apply_gravity(board_state)
 		update_all_views()
@@ -141,3 +165,11 @@ func resolve_board() -> void:
 		CascadeResolver.refill_from_deck(board_state, deck_state)
 		update_all_views()
 		update_deck_ui()
+	
+	check_game_end()
+
+func check_game_end() -> void:
+	if stage_state.is_cleared():
+		print("Stage Cleared!")
+	elif stage_state.is_game_over():
+		print("Game Over!")
