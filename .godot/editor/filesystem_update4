@@ -6,3 +6,5 @@ res://scenes/screens/reward_select_screen.tscn
 res://scenes/screens/shop_screen.tscn
 res://scenes/screens/stage_play_screen.tscn
 res://scenes/screens/title_screen.tscn
+res://scripts/ui/main_scene.gd
+res://scripts/ui/stage_play_screen.gd

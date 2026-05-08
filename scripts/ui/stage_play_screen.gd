@@ -12,14 +12,6 @@ signal stage_finished(success: bool)
 
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
-const BoardState = preload("res://scripts/domain/board_state.gd")
-const MatchResolver = preload("res://scripts/domain/match_resolver.gd")
-const CascadeResolver = preload("res://scripts/domain/cascade_resolver.gd")
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
-const DeckState = preload("res://scripts/domain/deck_state.gd")
-const StageState = preload("res://scripts/domain/stage_state.gd")
-const ScoreCalculator = preload("res://scripts/domain/score_calculator.gd")
-
 var run_state
 var board_state
 var deck_state

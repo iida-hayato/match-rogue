@@ -1,8 +1,6 @@
 class_name CascadeResolver
 extends RefCounted
 
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
-
 static func apply_gravity(board) -> Array:
 	var movements = [] # Array of {from: Vector2i, to: Vector2i}
 	for x in range(board.width):

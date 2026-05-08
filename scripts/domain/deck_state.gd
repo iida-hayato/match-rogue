@@ -1,8 +1,6 @@
 class_name DeckState
 extends RefCounted
 
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
-
 var draw_pile: Array[GemInstance] = []
 var discard_pile: Array[GemInstance] = []
 

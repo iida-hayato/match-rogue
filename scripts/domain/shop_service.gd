@@ -1,8 +1,6 @@
 class_name ShopService
 extends RefCounted
 
-const RunState = preload("res://scripts/domain/run_state.gd")
-
 static func calculate_gold_reward(stage_score: int, target_score: int) -> int:
 	# Basic reward: 10 + 10% of excess score
 	var excess = max(0, stage_score - target_score)

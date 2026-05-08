@@ -1,8 +1,6 @@
 class_name RunState
 extends RefCounted
 
-const DeckState = preload("res://scripts/domain/deck_state.gd")
-
 var stage_index: int = 0
 var max_stages: int = 14
 var deck: DeckState

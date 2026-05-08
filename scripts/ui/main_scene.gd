@@ -1,14 +1,5 @@
 extends Control
 
-const RunState = preload("res://scripts/domain/run_state.gd")
-const StageMaster = preload("res://scripts/domain/stage_master.gd")
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
-const DeckState = preload("res://scripts/domain/deck_state.gd")
-
-const ShopService = preload("res://scripts/domain/shop_service.gd")
-
-const RewardGenerator = preload("res://scripts/domain/reward_generator.gd")
-
 var run_state: RunState
 var current_screen: Control
 
