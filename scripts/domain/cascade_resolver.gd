@@ -4,35 +4,32 @@ extends RefCounted
 static func apply_gravity(board) -> Array:
 	var movements = [] # Array of {from: Vector2i, to: Vector2i}
 	for x in range(board.width):
-		var empty_slots = 0
+		var target_y = board.height - 1
 		for y in range(board.height - 1, -1, -1):
-			if board.get_gem(x, y) == null:
-				empty_slots += 1
-			elif empty_slots > 0:
-				var gem = board.get_gem(x, y)
-				board.set_gem(x, y, null)
-				board.set_gem(x, y + empty_slots, gem)
-				movements.append({"from": Vector2i(x, y), "to": Vector2i(x, y + empty_slots)})
+			var gem = board.get_gem(x, y)
+			if gem != null:
+				if y != target_y:
+					board.set_gem(x, y, null)
+					board.set_gem(x, target_y, gem)
+					movements.append({"from": Vector2i(x, y), "to": Vector2i(x, target_y)})
+				target_y -= 1
 	return movements
 
-static func refill_random(board, gem_definitions: Array[String]) -> Array:
-	var new_gems = [] # Array of {pos: Vector2i, definition_id: String}
-	for x in range(board.width):
-		for y in range(board.height):
-			if board.get_gem(x, y) == null:
-				var def_id = gem_definitions[randi() % gem_definitions.size()]
-				var gem = GemInstance.new(def_id)
-				board.set_gem(x, y, gem)
-				new_gems.append({"pos": Vector2i(x, y), "gem": gem})
-	return new_gems
-
 static func refill_from_deck(board, deck) -> Array:
-	var new_gems = [] # Array of {pos: Vector2i, gem: GemInstance}
+	var spawns = [] # Array of {from: Vector2i, to: Vector2i, gem: GemInstance}
 	for x in range(board.width):
-		for y in range(board.height):
+		var empty_count = 0
+		for y in range(board.height - 1, -1, -1):
+			if board.get_gem(x, y) == null:
+				empty_count += 1
+		
+		var current_empty = empty_count
+		for y in range(board.height - 1, -1, -1):
 			if board.get_gem(x, y) == null:
 				var gem = deck.draw_one()
 				if gem:
 					board.set_gem(x, y, gem)
-					new_gems.append({"pos": Vector2i(x, y), "gem": gem})
-	return new_gems
+					var from_y = -current_empty
+					spawns.append({"from": Vector2i(x, from_y), "to": Vector2i(x, y), "gem": gem})
+					current_empty -= 1
+	return spawns

@@ -2,46 +2,81 @@ class_name MatchResolver
 extends RefCounted
 
 static func find_matches(board) -> Array[Array]:
-	var matches: Array[Array] = []
+	var raw_groups = []
 
 	# Horizontal matches
 	for y in range(board.height):
-		for x in range(board.width - 2):
+		var x = 0
+		while x < board.width:
 			var gem = board.get_gem(x, y)
-			if gem == null: continue
-			
-			var match_group = [Vector2i(x, y)]
-			var next_x = x + 1
-			while next_x < board.width:
-				var next_gem = board.get_gem(next_x, y)
+			if gem == null:
+				x += 1
+				continue
+			var run = [Vector2i(x, y)]
+			var scan_x = x + 1
+			while scan_x < board.width:
+				var next_gem = board.get_gem(scan_x, y)
 				if next_gem != null and next_gem.definition_id == gem.definition_id:
-					match_group.append(Vector2i(next_x, y))
-					next_x += 1
+					run.append(Vector2i(scan_x, y))
+					scan_x += 1
 				else:
 					break
-			
-			if match_group.size() >= 3:
-				matches.append(match_group)
-				x = next_x - 1 # Skip checked gems
+			if run.size() >= 3:
+				raw_groups.append(run)
+			x = scan_x
 	
 	# Vertical matches
 	for x in range(board.width):
-		for y in range(board.height - 2):
+		var y = 0
+		while y < board.height:
 			var gem = board.get_gem(x, y)
-			if gem == null: continue
-			
-			var match_group = [Vector2i(x, y)]
-			var next_y = y + 1
-			while next_y < board.height:
-				var next_gem = board.get_gem(x, next_y)
+			if gem == null:
+				y += 1
+				continue
+			var run = [Vector2i(x, y)]
+			var scan_y = y + 1
+			while scan_y < board.height:
+				var next_gem = board.get_gem(x, scan_y)
 				if next_gem != null and next_gem.definition_id == gem.definition_id:
-					match_group.append(Vector2i(x, next_y))
-					next_y += 1
+					run.append(Vector2i(x, scan_y))
+					scan_y += 1
 				else:
 					break
-			
-			if match_group.size() >= 3:
-				matches.append(match_group)
-				y = next_y - 1 # Skip checked gems
+			if run.size() >= 3:
+				raw_groups.append(run)
+			y = scan_y
 				
-	return matches
+	return merge_groups(raw_groups)
+
+static func merge_groups(groups: Array) -> Array[Array]:
+	if groups.is_empty():
+		return []
+	
+	var merged: Array[Array] = []
+	var remaining = groups.duplicate()
+	
+	while not remaining.is_empty():
+		var current = remaining.pop_back()
+		var changed = true
+		while changed:
+			changed = false
+			for i in range(remaining.size() - 1, -1, -1):
+				if _groups_overlap(current, remaining[i]):
+					current = _merge_two_groups(current, remaining[i])
+					remaining.remove_at(i)
+					changed = true
+		merged.append(current)
+	return merged
+
+static func _groups_overlap(a: Array, b: Array) -> bool:
+	for pos_a in a:
+		if pos_a in b:
+			return true
+	return false
+
+static func _merge_two_groups(a: Array, b: Array) -> Array:
+	var res = a.duplicate()
+	for pos_b in b:
+		if not pos_b in res:
+			res.append(pos_b)
+	return res

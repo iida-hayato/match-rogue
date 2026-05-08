@@ -18,6 +18,12 @@ var deck_state
 var stage_state
 var gem_views = [] # 2D array [y][x]
 var selected_pos = null
+var is_animating = false
+
+const SWAP_DURATION = 0.15
+const CLEAR_DURATION = 0.2
+const FALL_DURATION = 0.2
+const TILE_SIZE_ESTIMATE = 68.0
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
 var color_map = {
@@ -29,7 +35,7 @@ var color_map = {
 }
 
 func _ready() -> void:
-	pass # Wait for initialize_stage call
+	pass
 
 func initialize_stage(run: Object, plan: Object) -> void:
 	run_state = run
@@ -39,16 +45,10 @@ func initialize_stage(run: Object, plan: Object) -> void:
 	stage_state.target_score = plan.target_score
 	stage_state.moves_remaining = plan.move_limit
 	
-	if gem_views.size() == 0:
-		setup_board_views()
-	
+	setup_board_views()
 	initial_refill()
 	update_hud()
 	update_deck_ui()
-
-func setup_initial_deck() -> void:
-	# This is now handled in MainScene
-	pass
 
 func update_deck_ui() -> void:
 	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
@@ -85,7 +85,6 @@ func initial_refill() -> void:
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
-		# Clear matches and return to deck or just discard for now
 		for m in matches:
 			for pos in m:
 				var gem = board_state.get_gem(pos.x, pos.y)
@@ -106,10 +105,13 @@ func update_gem_view(x: int, y: int) -> void:
 	if gem:
 		view.set_gem_color(color_map[gem.definition_id])
 		view.visible = true
+		view.position = Vector2(x * TILE_SIZE_ESTIMATE, y * TILE_SIZE_ESTIMATE)
 	else:
 		view.visible = false
 
 func _on_gem_clicked(pos: Vector2i) -> void:
+	if is_animating: return
+	
 	if selected_pos == null:
 		selected_pos = pos
 		gem_views[pos.y][pos.x].set_highlight(true)
@@ -126,25 +128,24 @@ func _on_gem_clicked(pos: Vector2i) -> void:
 			gem_views[pos.y][pos.x].set_highlight(true)
 
 func is_adjacent(p1: Vector2i, p2: Vector2i) -> bool:
-	return (abs(p1.x - p2.x) == 1 and p1.y == p2.y) or (abs(p1.y - p2.y) == 1 and p1.x == p2.x)
+	return abs(p1.x - p2.x) + abs(p1.y - p2.y) == 1
 
 func try_swap(p1: Vector2i, p2: Vector2i) -> void:
-	# Animate swap
+	is_animating = true
 	await animate_swap(p1, p2)
 	
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
 	var matches = MatchResolver.find_matches(board_state)
 	if matches.size() > 0:
-		# Valid swap
 		stage_state.moves_remaining -= 1
 		update_hud()
 		await resolve_board()
 	else:
-		# Invalid swap, revert
 		board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
-		await animate_swap(p1, p2) # Animate back
-		update_gem_view(p1.x, p1.y)
-		update_gem_view(p2.x, p2.y)
+		await animate_swap(p1, p2)
+		update_all_views()
+	
+	is_animating = false
 
 func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var v1 = gem_views[p1.y][p1.x]
@@ -153,19 +154,9 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var pos2 = v2.position
 	
 	var tween = create_tween().set_parallel(true)
-	tween.tween_property(v1, "position", pos2, 0.2)
-	tween.tween_property(v2, "position", pos1, 0.2)
+	tween.tween_property(v1, "position", pos2, SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(v2, "position", pos1, SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
-	
-	# Reset positions and swap view references in the array if needed, 
-	# but update_gem_view will reset them based on board_state anyway.
-	# For now, let's just swap them in gem_views too to keep it consistent.
-	var temp = gem_views[p1.y][p1.x]
-	gem_views[p1.y][p1.x] = gem_views[p2.y][p2.x]
-	gem_views[p2.y][p2.x] = temp
-	# Also update their board_pos!
-	gem_views[p1.y][p1.x].board_pos = p1
-	gem_views[p2.y][p2.x].board_pos = p2
 
 func resolve_board() -> void:
 	stage_state.chain_index = 0
@@ -174,10 +165,8 @@ func resolve_board() -> void:
 		if matches.size() == 0:
 			break
 		
-		# Animate clear
 		await animate_clear(matches)
 		
-		# Calculate score for these matches
 		var cleared_gems = []
 		for m in matches:
 			for pos in m:
@@ -191,18 +180,16 @@ func resolve_board() -> void:
 		stage_state.score += score_result.delta
 		stage_state.chain_index += 1
 		
-		update_all_views()
-		update_deck_ui()
 		update_hud()
+		update_deck_ui()
 		
 		var movements = CascadeResolver.apply_gravity(board_state)
-		await animate_gravity(movements)
-		update_all_views()
+		await animate_movements(movements)
 		
-		var new_gems = CascadeResolver.refill_from_deck(board_state, deck_state)
-		await animate_refill(new_gems)
+		var spawns = CascadeResolver.refill_from_deck(board_state, deck_state)
+		await animate_spawns(spawns)
+		
 		update_all_views()
-		update_deck_ui()
 	
 	check_game_end()
 
@@ -211,36 +198,60 @@ func animate_clear(matches: Array[Array]) -> void:
 	for m in matches:
 		for pos in m:
 			var view = gem_views[pos.y][pos.x]
-			tween.tween_property(view, "modulate:a", 0.0, 0.2)
-			tween.tween_property(view, "scale", Vector2.ZERO, 0.2)
+			tween.tween_property(view, "modulate:a", 0.0, CLEAR_DURATION)
+			tween.tween_property(view, "scale", Vector2.ZERO, CLEAR_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	await tween.finished
-	# Reset views for future use
+	
 	for m in matches:
 		for pos in m:
 			var view = gem_views[pos.y][pos.x]
 			view.modulate.a = 1.0
 			view.scale = Vector2.ONE
+			view.visible = false
 
-func animate_gravity(movements: Array) -> void:
-	if movements.size() == 0: return
+func animate_movements(movements: Array) -> void:
+	if movements.is_empty(): return
 	
-	var _tween = create_tween().set_parallel(true)
+	var tween = create_tween().set_parallel(true)
 	for move in movements:
-		var _from = move.from
-		var _to = move.to
-		# This is tricky because gem_views is a static 2D grid
-		# For MVP, let's just wait a bit instead of complex view swapping
-		pass
-	await get_tree().create_timer(0.2).timeout
+		var from = move.from
+		var to = move.to
+		var view = gem_views[from.y][from.x]
+		gem_views[to.y][to.x] = view
+		gem_views[from.y][from.x] = null
+		
+		var dist = abs(to.y - from.y)
+		var duration = FALL_DURATION + (dist * 0.05)
+		var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
+		tween.tween_property(view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	
+	await tween.finished
 
-func animate_refill(new_gems: Array) -> void:
-	if new_gems.size() == 0: return
-	await get_tree().create_timer(0.2).timeout
+func animate_spawns(spawns: Array) -> void:
+	if spawns.is_empty(): return
+	
+	var tween = create_tween().set_parallel(true)
+	for spawn in spawns:
+		var from = spawn.from
+		var to = spawn.to
+		var gem_view = GEM_VIEW_SCENE.instantiate()
+		board_view.add_child(gem_view)
+		gem_view.board_pos = to
+		gem_view.gem_clicked.connect(_on_gem_clicked)
+		gem_view.set_gem_color(color_map[spawn.gem.definition_id])
+		gem_views[to.y][to.x] = gem_view
+		
+		gem_view.position = Vector2(from.x * TILE_SIZE_ESTIMATE, from.y * TILE_SIZE_ESTIMATE)
+		
+		var dist = abs(to.y - from.y)
+		var duration = FALL_DURATION + (dist * 0.05)
+		var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
+		tween.tween_property(gem_view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	
+	await tween.finished
 
 func check_game_end() -> void:
 	if stage_state.is_cleared():
-		print("Stage Cleared!")
 		stage_finished.emit(true)
 	elif stage_state.is_game_over():
-		print("Game Over!")
 		stage_finished.emit(false)

@@ -48,11 +48,9 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BoardView" type="GridContainer" parent="VBox/MainLayout/BoardArea"]
+[node name="BoardView" type="Control" parent="VBox/MainLayout/BoardArea"]
+custom_minimum_size = Vector2(544, 544)
 layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 8
 
 [node name="RightPanel" type="VBoxContainer" parent="VBox/MainLayout"]
 custom_minimum_size = Vector2(250, 0)
