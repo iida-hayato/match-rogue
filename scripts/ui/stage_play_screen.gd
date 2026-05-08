@@ -36,6 +36,15 @@ var color_map = {
 
 func _ready() -> void:
 	set_process_input(true)
+	# Standalone test
+	if get_tree().current_scene == self:
+		var mock_run = RunState.new()
+		var initial_gems: Array[GemInstance] = []
+		for i in range(100):
+			initial_gems.append(GemInstance.new("red"))
+		mock_run.deck = DeckState.new(initial_gems)
+		var mock_plan = StageMaster.create_plan(0)
+		initialize_stage(mock_run, mock_plan)
 
 func _input(event: InputEvent) -> void:
 	if is_animating or selected_pos == null:

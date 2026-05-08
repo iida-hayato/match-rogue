@@ -10,6 +10,10 @@ var run_state
 
 func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
+	if get_tree().current_scene == self:
+		var mock_run = RunState.new()
+		var mock_plan = StageMaster.create_plan(0)
+		initialize_shop(mock_run, mock_plan)
 
 func initialize_shop(run: Object, next_plan: Object) -> void:
 	run_state = run
