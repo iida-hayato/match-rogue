@@ -6,7 +6,7 @@ signal stage_finished(success: bool)
 @onready var score_label: Label = $VBox/HUD/ScoreLabel
 @onready var moves_label: Label = $VBox/HUD/MovesLabel
 @onready var gold_label: Label = $VBox/HUD/GoldLabel
-@onready var board_view: GridContainer = $VBox/MainLayout/BoardArea/BoardView
+@onready var board_view: Control = $VBox/MainLayout/BoardArea/BoardView
 @onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 
