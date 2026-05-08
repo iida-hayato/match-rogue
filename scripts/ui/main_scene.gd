@@ -13,7 +13,19 @@ var run_state: RunState
 var current_screen: Control
 
 func _ready() -> void:
-	start_new_run()
+	load_title_screen()
+
+func load_title_screen() -> void:
+	if current_screen:
+		current_screen.queue_free()
+	
+	var title_screen_scene = load("res://scenes/screens/title_screen.tscn")
+	var title_screen = title_screen_scene.instantiate()
+	add_child(title_screen)
+	title_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	current_screen = title_screen
+	
+	title_screen.start_requested.connect(start_new_run)
 
 func start_new_run() -> void:
 	run_state = RunState.new()
@@ -54,9 +66,22 @@ func _on_stage_finished(success: bool, plan: Object) -> void:
 		if run_state.stage_index < run_state.max_stages:
 			load_reward_select()
 		else:
-			print("Run Completed!")
+			load_result_screen()
 	else:
-		print("Game Over!")
+		load_result_screen()
+
+func load_result_screen() -> void:
+	if current_screen:
+		current_screen.queue_free()
+	
+	var result_screen_scene = load("res://scenes/screens/result_screen.tscn")
+	var result_screen = result_screen_scene.instantiate()
+	add_child(result_screen)
+	result_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	current_screen = result_screen
+	
+	result_screen.initialize_result(run_state)
+	result_screen.restart_requested.connect(load_title_screen)
 
 func load_reward_select() -> void:
 	if current_screen:
