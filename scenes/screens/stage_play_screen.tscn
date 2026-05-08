@@ -1,0 +1,83 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/stage_play_screen.gd" id="1_script"]
+
+[node name="StagePlayScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HUD" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="StageLabel" type="Label" parent="VBox/HUD"]
+layout_mode = 2
+text = "Stage: 1-1"
+
+[node name="ScoreLabel" type="Label" parent="VBox/HUD"]
+layout_mode = 2
+text = "Score: 0 / 1000"
+
+[node name="MovesLabel" type="Label" parent="VBox/HUD"]
+layout_mode = 2
+text = "Moves: 20"
+
+[node name="GoldLabel" type="Label" parent="VBox/HUD"]
+layout_mode = 2
+text = "Gold: 0"
+
+[node name="MainLayout" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BoardArea" type="CenterContainer" parent="VBox/MainLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BoardView" type="GridContainer" parent="VBox/MainLayout/BoardArea"]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 8
+
+[node name="RightPanel" type="VBoxContainer" parent="VBox/MainLayout"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="DeckInfo" type="VBoxContainer" parent="VBox/MainLayout/RightPanel"]
+layout_mode = 2
+
+[node name="DrawPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
+layout_mode = 2
+text = "Draw: 50"
+
+[node name="DiscardPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
+layout_mode = 2
+text = "Discard: 0"
+
+[node name="ShuffleButton" type="Button" parent="VBox/MainLayout/RightPanel"]
+layout_mode = 2
+text = "Shuffle"
+
+[node name="RelicsLabel" type="Label" parent="VBox/MainLayout/RightPanel"]
+layout_mode = 2
+text = "Relics"
+
+[node name="RelicsContainer" type="GridContainer" parent="VBox/MainLayout/RightPanel"]
+layout_mode = 2
+columns = 4
