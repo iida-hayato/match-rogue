@@ -1,0 +1,117 @@
+[gd_scene load_steps=2 format=3 uid="uid://c45mk54nqh7t2"]
+
+[ext_resource type="Script" path="res://scripts/ui/options_screen.gd" id="1_script"]
+
+[node name="OptionsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.1, 1.0)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "OPTIONS"
+horizontal_alignment = 1
+
+[node name="Options" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Master" type="HBoxContainer" parent="VBox/Options"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/Options/Master"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Master Vol"
+
+[node name="Slider" type="HSlider" parent="VBox/Options/Master"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="BGM" type="HBoxContainer" parent="VBox/Options"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/Options/BGM"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "BGM Vol"
+
+[node name="Slider" type="HSlider" parent="VBox/Options/BGM"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="SE" type="HBoxContainer" parent="VBox/Options"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/Options/SE"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "SE Vol"
+
+[node name="Slider" type="HSlider" parent="VBox/Options/SE"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="AnimSpeed" type="HBoxContainer" parent="VBox/Options"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBox/Options/AnimSpeed"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Anim Speed"
+
+[node name="Slider" type="HSlider" parent="VBox/Options/AnimSpeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.5
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="BackButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back"
+
+[connection signal="value_changed" from="VBox/Options/Master/Slider" to="." method="_on_master_value_changed"]
+[connection signal="pressed" from="VBox/BackButton" to="." method="_on_back_pressed"]

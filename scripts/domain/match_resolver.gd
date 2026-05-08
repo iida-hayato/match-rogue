@@ -99,3 +99,46 @@ static func find_stone_breaks(board, cleared_positions: Array) -> Array[Vector2i
 							stones_to_break.append(neighbor)
 	
 	return stones_to_break
+
+static func find_effect_positions(board, cleared_positions: Array) -> Array[Vector2i]:
+	var effect_positions: Array[Vector2i] = []
+	var seen: Dictionary = {}
+	var queue = cleared_positions.duplicate()
+	var processed_special_gems: Dictionary = {}
+	
+	while not queue.is_empty():
+		var pos = queue.pop_back()
+		var gem = board.get_gem(pos.x, pos.y)
+		if gem == null: continue
+		
+		# Check all coats for effects
+		for effect in gem.coat_ids:
+			var key = "%d,%d:%s" % [pos.x, pos.y, effect]
+			if processed_special_gems.has(key): continue
+			processed_special_gems[key] = true
+			
+			var pattern = []
+			match effect:
+				"rocket_v":
+					for y in range(board.height): pattern.append(Vector2i(pos.x, y))
+				"rocket_h":
+					for x in range(board.width): pattern.append(Vector2i(x, pos.y))
+				"bomb":
+					for dy in range(-1, 2):
+						for dx in range(-1, 2):
+							pattern.append(Vector2i(pos.x + dx, pos.y + dy))
+				"beam":
+					for i in range(-max(board.width, board.height), max(board.width, board.height)):
+						pattern.append(Vector2i(pos.x + i, pos.y + i))
+						pattern.append(Vector2i(pos.x + i, pos.y - i))
+			
+			for p in pattern:
+				if board.is_within_bounds(p.x, p.y) and not seen.has(p):
+					seen[p] = true
+					effect_positions.append(p)
+					# If we hit another special gem, add it to queue to chain effects
+					var next_gem = board.get_gem(p.x, p.y)
+					if next_gem and next_gem.coat_ids.size() > 0:
+						queue.append(p)
+						
+	return effect_positions

@@ -39,6 +39,7 @@ var color_map = {
 
 func _ready() -> void:
 	set_process_input(true)
+	_setup_pause_overlay()
 	# Standalone test
 	if get_tree().current_scene == self:
 		var mock_run = RunState.new()
@@ -50,8 +51,28 @@ func _ready() -> void:
 		var mock_plan = StageMaster.create_plan(0)
 		initialize_stage(mock_run, mock_deck, mock_plan)
 
+func _setup_pause_overlay() -> void:
+	var overlay = ColorRect.new()
+	overlay.name = "PauseOverlay"
+	overlay.color = Color(0, 0, 0, 0.5)
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.visible = false
+	add_child(overlay)
+	
+	var label = Label.new()
+	label.text = "PAUSED - Press ESC to Resume"
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	overlay.add_child(label)
+
 func _input(event: InputEvent) -> void:
-	if is_animating or selected_pos == null:
+	if event.is_action_pressed("ui_cancel"):
+		var overlay = get_node("PauseOverlay")
+		overlay.visible = !overlay.visible
+		get_tree().paused = overlay.visible
+		return
+
+	if is_animating or selected_pos == null or get_tree().paused:
 		return
 	
 	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
@@ -164,7 +185,7 @@ func update_gem_view(x: int, y: int) -> void:
 		view.visible = false
 
 func _on_gem_clicked(pos: Vector2i) -> void:
-	if is_animating: return
+	if is_animating or get_tree().paused: return
 	
 	if selected_pos == null:
 		selected_pos = pos
@@ -231,34 +252,50 @@ func resolve_board() -> void:
 		if matches.size() == 0:
 			break
 		
-		# Identify stones to break
-		var cleared_positions = []
+		# Identify direct match positions
+		var matched_positions = []
 		for m in matches:
-			cleared_positions.append_array(m)
-		var stone_breaks = MatchResolver.find_stone_breaks(board_state, cleared_positions)
+			matched_positions.append_array(m)
+			
+		# Identify effect positions (Rockets, Bombs, etc.)
+		var effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions)
 		
-		# Animate clear (matches + stones)
+		# All cleared positions (matches + effects)
+		var all_cleared_positions = matched_positions.duplicate()
+		for pos in effect_positions:
+			if not pos in all_cleared_positions:
+				all_cleared_positions.append(pos)
+				
+		# Identify stones to break based on ALL cleared positions
+		var stone_breaks = MatchResolver.find_stone_breaks(board_state, all_cleared_positions)
+		
+		# Combined animation groups
 		var combined_clears = matches.duplicate()
+		if effect_positions.size() > 0:
+			combined_clears.append(effect_positions)
 		if stone_breaks.size() > 0:
 			combined_clears.append(stone_breaks)
+			
 		await animate_clear(combined_clears)
 		
 		# Calculate score and discard
 		var cleared_gems = []
-		for m in matches:
-			for pos in m:
-				var gem = board_state.get_gem(pos.x, pos.y)
-				if gem:
-					cleared_gems.append(gem)
-					if not gem.is_stone():
-						deck_state.discard(gem)
-					board_state.set_gem(pos.x, pos.y, null)
+		for pos in all_cleared_positions:
+			var gem = board_state.get_gem(pos.x, pos.y)
+			if gem:
+				cleared_gems.append(gem)
+				if gem.coat_ids.has("coin"):
+					stage_state.gold_earned += 1
+				
+				if not gem.is_stone():
+					deck_state.discard(gem)
+				board_state.set_gem(pos.x, pos.y, null)
 		
 		# Clear stones from board
 		for pos in stone_breaks:
 			board_state.set_gem(pos.x, pos.y, null)
 		
-		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index)
+		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
 		stage_state.chain_index += 1
 		resolution_steps += 1
