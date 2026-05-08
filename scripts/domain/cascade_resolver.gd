@@ -27,3 +27,14 @@ static func refill_random(board, gem_definitions: Array[String]) -> Array:
 				board.set_gem(x, y, gem)
 				new_gems.append({"pos": Vector2i(x, y), "gem": gem})
 	return new_gems
+
+static func refill_from_deck(board, deck) -> Array:
+	var new_gems = [] # Array of {pos: Vector2i, gem: GemInstance}
+	for x in range(board.width):
+		for y in range(board.height):
+			if board.get_gem(x, y) == null:
+				var gem = deck.draw_one()
+				if gem:
+					board.set_gem(x, y, gem)
+					new_gems.append({"pos": Vector2i(x, y), "gem": gem})
+	return new_gems

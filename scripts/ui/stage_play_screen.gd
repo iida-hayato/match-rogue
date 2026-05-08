@@ -1,14 +1,19 @@
 extends Control
 
 @onready var board_view: GridContainer = $VBox/MainLayout/BoardArea/BoardView
+@onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
+@onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
 const BoardState = preload("res://scripts/domain/board_state.gd")
 const MatchResolver = preload("res://scripts/domain/match_resolver.gd")
 const CascadeResolver = preload("res://scripts/domain/cascade_resolver.gd")
 const GemInstance = preload("res://scripts/domain/gem_instance.gd")
+const DeckState = preload("res://scripts/domain/deck_state.gd")
 
 var board_state
+var deck_state
 var gem_views = [] # 2D array [y][x]
 var selected_pos = null
 
@@ -23,8 +28,21 @@ var color_map = {
 
 func _ready() -> void:
 	board_state = BoardState.new(8, 8)
+	setup_initial_deck()
 	setup_board_views()
 	initial_refill()
+
+func setup_initial_deck() -> void:
+	var initial_gems: Array[GemInstance] = []
+	for def_id in gem_definitions:
+		for i in range(20): # 20 of each color = 100 gems
+			initial_gems.append(GemInstance.new(def_id))
+	deck_state = DeckState.new(initial_gems)
+	update_deck_ui()
+
+func update_deck_ui() -> void:
+	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
+	discard_label.text = "Discard: %d" % deck_state.discard_pile.size()
 
 func setup_board_views() -> void:
 	gem_views.resize(8)
@@ -40,18 +58,23 @@ func setup_board_views() -> void:
 
 func initial_refill() -> void:
 	print("Starting initial refill...")
-	# Refill until no matches
-	while true:
-		CascadeResolver.refill_random(board_state, gem_definitions)
+	var max_iterations = 100
+	var iterations = 0
+	while iterations < max_iterations:
+		iterations += 1
+		CascadeResolver.refill_from_deck(board_state, deck_state)
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
-		# Clear matches and repeat (simple initial setup)
+		# Clear matches and return to deck or just discard for now
 		for m in matches:
 			for pos in m:
+				var gem = board_state.get_gem(pos.x, pos.y)
+				deck_state.discard(gem)
 				board_state.set_gem(pos.x, pos.y, null)
 	update_all_views()
-	print("Initial refill complete.")
+	update_deck_ui()
+	print("Initial refill complete after %d iterations." % iterations)
 
 func update_all_views() -> void:
 	for y in range(8):
@@ -102,18 +125,19 @@ func resolve_board() -> void:
 		if matches.size() == 0:
 			break
 		
-		# Clear gems
+		# Clear gems and discard
 		for m in matches:
 			for pos in m:
+				var gem = board_state.get_gem(pos.x, pos.y)
+				deck_state.discard(gem)
 				board_state.set_gem(pos.x, pos.y, null)
 		
 		update_all_views()
-		# await get_tree().create_timer(0.2).timeout # For animation later
+		update_deck_ui()
 		
 		CascadeResolver.apply_gravity(board_state)
 		update_all_views()
-		# await get_tree().create_timer(0.2).timeout
 		
-		CascadeResolver.refill_random(board_state, gem_definitions)
+		CascadeResolver.refill_from_deck(board_state, deck_state)
 		update_all_views()
-		# await get_tree().create_timer(0.2).timeout
+		update_deck_ui()
