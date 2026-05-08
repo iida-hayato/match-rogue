@@ -224,10 +224,10 @@ func animate_clear(matches: Array[Array]) -> void:
 func animate_gravity(movements: Array) -> void:
 	if movements.size() == 0: return
 	
-	var tween = create_tween().set_parallel(true)
+	var _tween = create_tween().set_parallel(true)
 	for move in movements:
-		var from = move.from
-		var to = move.to
+		var _from = move.from
+		var _to = move.to
 		# This is tricky because gem_views is a static 2D grid
 		# For MVP, let's just wait a bit instead of complex view swapping
 		pass
