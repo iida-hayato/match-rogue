@@ -69,6 +69,7 @@ func is_within_bounds(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 
 func initialize_stage(run: Object, plan: Object) -> void:
+	print("[StagePlayScreen] Initializing Stage: %d (Target Score: %d)" % [plan.stage_index, plan.target_score])
 	run_state = run
 	deck_state = run.deck
 	board_state = BoardState.new(8, 8)
@@ -76,10 +77,14 @@ func initialize_stage(run: Object, plan: Object) -> void:
 	stage_state.target_score = plan.target_score
 	stage_state.moves_remaining = plan.move_limit
 	
+	selected_pos = null
+	is_animating = false
+	
 	setup_board_views()
 	initial_refill()
 	update_hud()
 	update_deck_ui()
+	print("[StagePlayScreen] Initialization complete for stage %d." % plan.stage_index)
 
 func update_deck_ui() -> void:
 	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
@@ -92,6 +97,7 @@ func update_hud() -> void:
 	gold_label.text = "Gold: %d" % run_state.gold
 
 func setup_board_views() -> void:
+	print("[StagePlayScreen] Setting up board views. Current children: %d" % board_view.get_child_count())
 	for child in board_view.get_children():
 		child.queue_free()
 	
@@ -106,9 +112,10 @@ func setup_board_views() -> void:
 			gem_view.board_pos = Vector2i(x, y)
 			gem_view.gem_clicked.connect(_on_gem_clicked)
 			gem_views[y][x] = gem_view
+	print("[StagePlayScreen] Board views setup complete.")
 
 func initial_refill() -> void:
-	print("Starting initial refill...")
+	print("[StagePlayScreen] Starting initial refill...")
 	var max_iterations = 100
 	var iterations = 0
 	while iterations < max_iterations:
@@ -117,14 +124,18 @@ func initial_refill() -> void:
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
+		
+		print("[StagePlayScreen] Match found in initial refill (iteration %d), clearing..." % iterations)
 		for m in matches:
 			for pos in m:
 				var gem = board_state.get_gem(pos.x, pos.y)
-				deck_state.discard(gem)
-				board_state.set_gem(pos.x, pos.y, null)
+				if gem:
+					deck_state.discard(gem)
+					board_state.set_gem(pos.x, pos.y, null)
+	
 	update_all_views()
 	update_deck_ui()
-	print("Initial refill complete after %d iterations." % iterations)
+	print("[StagePlayScreen] Initial refill complete after %d iterations." % iterations)
 
 func update_all_views() -> void:
 	for y in range(8):

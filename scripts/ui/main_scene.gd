@@ -32,10 +32,12 @@ func setup_initial_deck() -> void:
 	run_state.deck = DeckState.new(initial_gems)
 
 func load_stage(stage_index: int) -> void:
+	print("[MainScene] Loading stage %d" % stage_index)
 	if current_screen:
 		current_screen.queue_free()
 	
 	var plan = StageMaster.create_plan(stage_index)
+	print("[MainScene] Stage Plan: Target=%d, Moves=%d" % [plan.target_score, plan.move_limit])
 	var play_screen_scene = load("res://scenes/screens/stage_play_screen.tscn")
 	var play_screen = play_screen_scene.instantiate()
 	add_child(play_screen)

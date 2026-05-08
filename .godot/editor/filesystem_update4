@@ -15,3 +15,4 @@ res://scripts/domain/shop_service.gd
 res://scripts/domain/stage_master.gd
 res://scripts/ui/gem_view.gd
 res://scripts/domain/match_resolver.gd
+res://scripts/ui/shop_screen.gd
