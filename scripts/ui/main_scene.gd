@@ -7,6 +7,8 @@ const DeckState = preload("res://scripts/domain/deck_state.gd")
 
 const ShopService = preload("res://scripts/domain/shop_service.gd")
 
+const RewardGenerator = preload("res://scripts/domain/reward_generator.gd")
+
 var run_state: RunState
 var current_screen: Control
 
@@ -50,11 +52,40 @@ func _on_stage_finished(success: bool, plan: Object) -> void:
 		
 		run_state.stage_index += 1
 		if run_state.stage_index < run_state.max_stages:
-			load_shop()
+			load_reward_select()
 		else:
 			print("Run Completed!")
 	else:
 		print("Game Over!")
+
+func load_reward_select() -> void:
+	if current_screen:
+		current_screen.queue_free()
+	
+	var rewards = RewardGenerator.generate_rewards(run_state.stage_index)
+	var reward_screen_scene = load("res://scenes/screens/reward_select_screen.tscn")
+	var reward_screen = reward_screen_scene.instantiate()
+	add_child(reward_screen)
+	reward_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	current_screen = reward_screen
+	
+	reward_screen.initialize_rewards(rewards)
+	reward_screen.reward_chosen.connect(_on_reward_chosen)
+
+func _on_reward_chosen(reward: Dictionary) -> void:
+	apply_reward(reward)
+	load_shop()
+
+func apply_reward(reward: Dictionary) -> void:
+	match reward.type:
+		"gold":
+			run_state.gold += reward.value
+		"upgrade":
+			# Placeholder for upgrade logic
+			print("Upgraded %s gem" % reward.gem_id)
+		"special_gem":
+			# Placeholder for adding special gem
+			print("Added %s gem" % reward.effect)
 
 func load_shop() -> void:
 	if current_screen:
