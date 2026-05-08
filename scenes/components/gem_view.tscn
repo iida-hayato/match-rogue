@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://dx7134e3452ns"]
 
-[ext_resource type="Script" path="res://scripts/ui/gem_view.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dyulhj1v1ed5d" path="res://scripts/ui/gem_view.gd" id="1_script"]
 
 [node name="GemView" type="TextureRect"]
 custom_minimum_size = Vector2(64, 64)

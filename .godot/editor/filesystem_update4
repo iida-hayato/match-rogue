@@ -1,0 +1,8 @@
+res://scenes/app/main_scene.tscn
+res://scenes/components/board_view.tscn
+res://scenes/components/gem_view.tscn
+res://scenes/screens/result_screen.tscn
+res://scenes/screens/reward_select_screen.tscn
+res://scenes/screens/shop_screen.tscn
+res://scenes/screens/stage_play_screen.tscn
+res://scenes/screens/title_screen.tscn
