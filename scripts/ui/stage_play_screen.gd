@@ -1,11 +1,14 @@
 extends Control
 
-@onready var board_view: GridContainer = $VBox/MainLayout/BoardArea/BoardView
-@onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
-@onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+signal stage_finished(success: bool)
+
+@onready var stage_label: Label = $VBox/HUD/StageLabel
 @onready var score_label: Label = $VBox/HUD/ScoreLabel
 @onready var moves_label: Label = $VBox/HUD/MovesLabel
 @onready var gold_label: Label = $VBox/HUD/GoldLabel
+@onready var board_view: GridContainer = $VBox/MainLayout/BoardArea/BoardView
+@onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
+@onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
@@ -17,6 +20,7 @@ const DeckState = preload("res://scripts/domain/deck_state.gd")
 const StageState = preload("res://scripts/domain/stage_state.gd")
 const ScoreCalculator = preload("res://scripts/domain/score_calculator.gd")
 
+var run_state
 var board_state
 var deck_state
 var stage_state
@@ -33,31 +37,41 @@ var color_map = {
 }
 
 func _ready() -> void:
+	pass # Wait for initialize_stage call
+
+func initialize_stage(run: Object, plan: Object) -> void:
+	run_state = run
+	deck_state = run.deck
 	board_state = BoardState.new(8, 8)
 	stage_state = StageState.new()
-	setup_initial_deck()
-	setup_board_views()
+	stage_state.target_score = plan.target_score
+	stage_state.moves_remaining = plan.move_limit
+	
+	if gem_views.size() == 0:
+		setup_board_views()
+	
 	initial_refill()
 	update_hud()
+	update_deck_ui()
 
 func setup_initial_deck() -> void:
-	var initial_gems: Array[GemInstance] = []
-	for def_id in gem_definitions:
-		for i in range(20): # 20 of each color = 100 gems
-			initial_gems.append(GemInstance.new(def_id))
-	deck_state = DeckState.new(initial_gems)
-	update_deck_ui()
+	# This is now handled in MainScene
+	pass
 
 func update_deck_ui() -> void:
 	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
 	discard_label.text = "Discard: %d" % deck_state.discard_pile.size()
 
 func update_hud() -> void:
+	stage_label.text = "Stage: %s" % run_state.get_current_stage_name()
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
-	gold_label.text = "Gold: %d" % stage_state.gold_earned
+	gold_label.text = "Gold: %d" % run_state.gold
 
 func setup_board_views() -> void:
+	for child in board_view.get_children():
+		child.queue_free()
+	
 	gem_views.resize(8)
 	for y in range(8):
 		gem_views[y] = []
@@ -171,5 +185,7 @@ func resolve_board() -> void:
 func check_game_end() -> void:
 	if stage_state.is_cleared():
 		print("Stage Cleared!")
+		stage_finished.emit(true)
 	elif stage_state.is_game_over():
 		print("Game Over!")
+		stage_finished.emit(false)
