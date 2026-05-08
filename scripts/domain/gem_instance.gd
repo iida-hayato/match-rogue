@@ -3,8 +3,12 @@ extends RefCounted
 
 var instance_id: String
 var definition_id: String
-# In the future, this might hold coat states, etc.
+var coat_ids: Array[String] = []
 
 func _init(def_id: String) -> void:
-	instance_id = str(ResourceUID.create_id()) if ClassDB.class_exists("ResourceUID") else str(randi())
+	instance_id = str(randi()) # Simple ID for now
 	definition_id = def_id
+
+func add_coat(coat_id: String) -> void:
+	if not coat_ids.has(coat_id):
+		coat_ids.append(coat_id)

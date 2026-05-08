@@ -6,6 +6,7 @@ const DeckState = preload("res://scripts/domain/deck_state.gd")
 var stage_index: int = 0
 var max_stages: int = 14
 var deck: DeckState
+var relic_ids: Array[String] = []
 var gold: int = 0
 var total_gold_earned: int = 0
 var run_seed: int
@@ -13,6 +14,10 @@ var run_seed: int
 func _init() -> void:
 	run_seed = randi()
 	seed(run_seed)
+
+func add_relic(relic_id: String) -> void:
+	if not relic_ids.has(relic_id):
+		relic_ids.append(relic_id)
 
 func get_current_stage_name() -> String:
 	var world = (stage_index / 4) + 1
