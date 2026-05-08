@@ -8,3 +8,8 @@ res://scenes/screens/stage_play_screen.tscn
 res://scenes/screens/title_screen.tscn
 res://scripts/ui/main_scene.gd
 res://scripts/ui/stage_play_screen.gd
+res://scripts/domain/cascade_resolver.gd
+res://scripts/domain/deck_state.gd
+res://scripts/domain/run_state.gd
+res://scripts/domain/shop_service.gd
+res://scripts/domain/stage_master.gd

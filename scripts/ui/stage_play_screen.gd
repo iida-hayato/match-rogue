@@ -125,6 +125,9 @@ func _on_gem_clicked(pos: Vector2i) -> void:
 			selected_pos = pos
 			gem_views[pos.y][pos.x].set_highlight(true)
 
+func is_adjacent(p1: Vector2i, p2: Vector2i) -> bool:
+	return (abs(p1.x - p2.x) == 1 and p1.y == p2.y) or (abs(p1.y - p2.y) == 1 and p1.x == p2.x)
+
 func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	# Animate swap
 	await animate_swap(p1, p2)
