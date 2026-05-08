@@ -14,8 +14,7 @@ func _gui_input(event: InputEvent) -> void:
 
 func set_highlight(active: bool) -> void:
 	if active:
-		placeholder_rect.border_width = 2 # This property doesn't exist on ColorRect, I should use a ReferenceRect or something
-		# For now, let's just change alpha or add a child
+		# For now, just change alpha for highlight
 		modulate.a = 0.5
 	else:
 		modulate.a = 1.0
