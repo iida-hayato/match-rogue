@@ -24,6 +24,8 @@ const SWAP_DURATION = 0.15
 const CLEAR_DURATION = 0.2
 const FALL_DURATION = 0.2
 const TILE_SIZE_ESTIMATE = 80.0
+const MAX_CHAIN_STEPS = 50
+const MAX_RESOLUTION_STEPS = 100
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
 var color_map = {
@@ -31,7 +33,8 @@ var color_map = {
 	"blue": Color.BLUE,
 	"green": Color.GREEN,
 	"yellow": Color.YELLOW,
-	"purple": Color.PURPLE
+	"purple": Color.PURPLE,
+	"stone": Color.DARK_GRAY
 }
 
 func _ready() -> void:
@@ -40,8 +43,9 @@ func _ready() -> void:
 	if get_tree().current_scene == self:
 		var mock_run = RunState.new()
 		var initial_gems: Array[GemInstance] = []
+		var defs = ["red", "blue", "green", "yellow", "purple"]
 		for i in range(100):
-			initial_gems.append(GemInstance.new("red"))
+			initial_gems.append(GemInstance.new(defs[i % defs.size()]))
 		var mock_deck = DeckState.new(initial_gems)
 		var mock_plan = StageMaster.create_plan(0)
 		initialize_stage(mock_run, mock_deck, mock_plan)
@@ -76,6 +80,7 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	stage_state = StageState.new()
 	stage_state.target_score = plan.target_score
 	stage_state.moves_remaining = plan.move_limit
+	stage_state.obstacle_rate = plan.obstacle_rate
 	
 	selected_pos = null
 	is_animating = false
@@ -91,7 +96,10 @@ func update_deck_ui() -> void:
 	discard_label.text = "Discard: %d" % deck_state.discard_pile.size()
 
 func update_hud() -> void:
-	stage_label.text = "Stage: %s" % run_state.get_current_stage_name()
+	var obstacle_info = ""
+	if stage_state.obstacle_rate > 0:
+		obstacle_info = " (Obs: %d%%)" % int(stage_state.obstacle_rate * 100)
+	stage_label.text = "Stage: %s%s" % [run_state.get_current_stage_name(), obstacle_info]
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
@@ -120,7 +128,8 @@ func initial_refill() -> void:
 	var iterations = 0
 	while iterations < max_iterations:
 		iterations += 1
-		CascadeResolver.refill_from_deck(board_state, deck_state)
+		# Initial refill doesn't have obstacles usually, but for consistency let's use the rate
+		CascadeResolver.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
@@ -130,7 +139,8 @@ func initial_refill() -> void:
 			for pos in m:
 				var gem = board_state.get_gem(pos.x, pos.y)
 				if gem:
-					deck_state.discard(gem)
+					if not gem.is_stone():
+						deck_state.discard(gem)
 					board_state.set_gem(pos.x, pos.y, null)
 	
 	update_all_views()
@@ -210,25 +220,48 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 
 func resolve_board() -> void:
 	stage_state.chain_index = 0
+	var resolution_steps = 0
+	
 	while true:
+		if stage_state.chain_index >= MAX_CHAIN_STEPS or resolution_steps >= MAX_RESOLUTION_STEPS:
+			print("[StagePlayScreen] Chain Overload triggered!")
+			break
+			
 		var matches = MatchResolver.find_matches(board_state)
 		if matches.size() == 0:
 			break
 		
-		await animate_clear(matches)
+		# Identify stones to break
+		var cleared_positions = []
+		for m in matches:
+			cleared_positions.append_array(m)
+		var stone_breaks = MatchResolver.find_stone_breaks(board_state, cleared_positions)
 		
+		# Animate clear (matches + stones)
+		var combined_clears = matches.duplicate()
+		if stone_breaks.size() > 0:
+			combined_clears.append(stone_breaks)
+		await animate_clear(combined_clears)
+		
+		# Calculate score and discard
 		var cleared_gems = []
 		for m in matches:
 			for pos in m:
 				var gem = board_state.get_gem(pos.x, pos.y)
 				if gem:
 					cleared_gems.append(gem)
-					deck_state.discard(gem)
+					if not gem.is_stone():
+						deck_state.discard(gem)
 					board_state.set_gem(pos.x, pos.y, null)
+		
+		# Clear stones from board
+		for pos in stone_breaks:
+			board_state.set_gem(pos.x, pos.y, null)
 		
 		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index)
 		stage_state.score += score_result.delta
 		stage_state.chain_index += 1
+		resolution_steps += 1
 		
 		update_hud()
 		update_deck_ui()
@@ -236,7 +269,7 @@ func resolve_board() -> void:
 		var movements = CascadeResolver.apply_gravity(board_state)
 		await animate_movements(movements)
 		
-		var spawns = CascadeResolver.refill_from_deck(board_state, deck_state)
+		var spawns = CascadeResolver.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
 		await animate_spawns(spawns)
 		
 		update_all_views()

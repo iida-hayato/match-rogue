@@ -15,7 +15,7 @@ static func apply_gravity(board) -> Array:
 				target_y -= 1
 	return movements
 
-static func refill_from_deck(board, deck) -> Array:
+static func refill_from_deck(board, deck, obstacle_rate: float = 0.0) -> Array:
 	var spawns = [] # Array of {from: Vector2i, to: Vector2i, gem: GemInstance}
 	for x in range(board.width):
 		var empty_count = 0
@@ -26,7 +26,12 @@ static func refill_from_deck(board, deck) -> Array:
 		var current_empty = empty_count
 		for y in range(board.height - 1, -1, -1):
 			if board.get_gem(x, y) == null:
-				var gem = deck.draw_one()
+				var gem = null
+				if randf() < obstacle_rate:
+					gem = GemInstance.new("stone")
+				else:
+					gem = deck.draw_one()
+				
 				if gem:
 					board.set_gem(x, y, gem)
 					var from_y = -current_empty

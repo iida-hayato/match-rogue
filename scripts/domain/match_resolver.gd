@@ -80,3 +80,22 @@ static func _merge_two_groups(a: Array, b: Array) -> Array:
 		if not pos_b in res:
 			res.append(pos_b)
 	return res
+
+static func find_stone_breaks(board, cleared_positions: Array) -> Array[Vector2i]:
+	var stones_to_break: Array[Vector2i] = []
+	var seen_stones: Dictionary = {}
+	
+	for pos in cleared_positions:
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				if dx == 0 and dy == 0: continue
+				
+				var neighbor = Vector2i(pos.x + dx, pos.y + dy)
+				if board.is_within_bounds(neighbor.x, neighbor.y):
+					var gem = board.get_gem(neighbor.x, neighbor.y)
+					if gem != null and gem.is_stone():
+						if not seen_stones.has(neighbor):
+							seen_stones[neighbor] = true
+							stones_to_break.append(neighbor)
+	
+	return stones_to_break

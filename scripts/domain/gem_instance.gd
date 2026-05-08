@@ -17,3 +17,6 @@ func duplicate() -> GemInstance:
 	var copy = GemInstance.new(definition_id)
 	copy.coat_ids = coat_ids.duplicate()
 	return copy
+
+func is_stone() -> bool:
+	return definition_id == "stone"

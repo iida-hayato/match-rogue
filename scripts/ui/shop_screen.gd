@@ -18,9 +18,14 @@ func _ready() -> void:
 func initialize_shop(run: Object, next_plan: Object) -> void:
 	run_state = run
 	gold_label.text = "Gold: %d" % run_state.gold
-	next_stage_info.text = "Next Stage: %s (Target: %d)" % [
+	var obstacle_text = ""
+	if next_plan.obstacle_rate > 0:
+		obstacle_text = " (Obstacle: Stone Gem %d%%)" % int(next_plan.obstacle_rate * 100)
+	
+	next_stage_info.text = "Next Stage: %s (Target: %d)%s" % [
 		run_state.get_current_stage_name(),
-		next_plan.target_score
+		next_plan.target_score,
+		obstacle_text
 	]
 
 func _on_next_button_pressed() -> void:
