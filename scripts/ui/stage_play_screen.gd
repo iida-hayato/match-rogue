@@ -35,7 +35,29 @@ var color_map = {
 }
 
 func _ready() -> void:
-	pass
+	set_process_input(true)
+
+func _input(event: InputEvent) -> void:
+	if is_animating or selected_pos == null:
+		return
+	
+	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		var mouse_pos = board_view.get_local_mouse_position()
+		var grid_pos = Vector2i(
+			int(floor(mouse_pos.x / TILE_SIZE_ESTIMATE)),
+			int(floor(mouse_pos.y / TILE_SIZE_ESTIMATE))
+		)
+		
+		if grid_pos != selected_pos and is_within_bounds(grid_pos):
+			if is_adjacent(selected_pos, grid_pos):
+				var p1 = selected_pos
+				var p2 = grid_pos
+				gem_views[selected_pos.y][selected_pos.x].set_highlight(false)
+				selected_pos = null
+				await try_swap(p1, p2)
+
+func is_within_bounds(pos: Vector2i) -> bool:
+	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
 
 func initialize_stage(run: Object, plan: Object) -> void:
 	run_state = run
