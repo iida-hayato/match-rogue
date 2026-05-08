@@ -23,7 +23,7 @@ var is_animating = false
 const SWAP_DURATION = 0.15
 const CLEAR_DURATION = 0.2
 const FALL_DURATION = 0.2
-const TILE_SIZE_ESTIMATE = 68.0
+const TILE_SIZE_ESTIMATE = 80.0
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
 var color_map = {
