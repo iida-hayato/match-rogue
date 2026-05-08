@@ -1,7 +1,6 @@
 extends TextureRect
 
 signal gem_clicked(pos: Vector2i)
-signal gem_dragged(pos: Vector2i)
 
 @onready var placeholder_rect: ColorRect = $PlaceholderRect
 var board_pos: Vector2i
