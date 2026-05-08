@@ -86,6 +86,7 @@ func setup_board_views() -> void:
 	for child in board_view.get_children():
 		child.queue_free()
 	
+	gem_views = []
 	gem_views.resize(8)
 	for y in range(8):
 		gem_views[y] = []
@@ -124,11 +125,12 @@ func update_all_views() -> void:
 func update_gem_view(x: int, y: int) -> void:
 	var gem = board_state.get_gem(x, y)
 	var view = gem_views[y][x]
-	if gem:
+	if gem and view:
 		view.set_gem_color(color_map[gem.definition_id])
 		view.visible = true
 		view.position = Vector2(x * TILE_SIZE_ESTIMATE, y * TILE_SIZE_ESTIMATE)
-	else:
+		view.board_pos = Vector2i(x, y)
+	elif view:
 		view.visible = false
 
 func _on_gem_clicked(pos: Vector2i) -> void:
@@ -179,6 +181,12 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	tween.tween_property(v1, "position", pos2, SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(v2, "position", pos1, SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
+	
+	# Update references and board_pos
+	gem_views[p1.y][p1.x] = v2
+	gem_views[p2.y][p2.x] = v1
+	v1.board_pos = p2
+	v2.board_pos = p1
 
 func resolve_board() -> void:
 	stage_state.chain_index = 0
@@ -217,35 +225,44 @@ func resolve_board() -> void:
 
 func animate_clear(matches: Array[Array]) -> void:
 	var tween = create_tween().set_parallel(true)
+	var processed_cells = []
 	for m in matches:
 		for pos in m:
+			if pos in processed_cells: continue
+			processed_cells.append(pos)
 			var view = gem_views[pos.y][pos.x]
-			tween.tween_property(view, "modulate:a", 0.0, CLEAR_DURATION)
-			tween.tween_property(view, "scale", Vector2.ZERO, CLEAR_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+			if view:
+				tween.tween_property(view, "modulate:a", 0.0, CLEAR_DURATION)
+				tween.tween_property(view, "scale", Vector2.ZERO, CLEAR_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	await tween.finished
 	
-	for m in matches:
-		for pos in m:
-			var view = gem_views[pos.y][pos.x]
-			view.modulate.a = 1.0
-			view.scale = Vector2.ONE
-			view.visible = false
+	for pos in processed_cells:
+		var view = gem_views[pos.y][pos.x]
+		if view:
+			view.queue_free()
+			gem_views[pos.y][pos.x] = null
 
 func animate_movements(movements: Array) -> void:
 	if movements.is_empty(): return
 	
 	var tween = create_tween().set_parallel(true)
-	for move in movements:
+	# Important: process from bottom up to avoid overwriting views we still need
+	var sorted_moves = movements.duplicate()
+	sorted_moves.sort_custom(func(a, b): return a.to.y > b.to.y)
+	
+	for move in sorted_moves:
 		var from = move.from
 		var to = move.to
 		var view = gem_views[from.y][from.x]
-		gem_views[to.y][to.x] = view
-		gem_views[from.y][from.x] = null
-		
-		var dist = abs(to.y - from.y)
-		var duration = FALL_DURATION + (dist * 0.05)
-		var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
-		tween.tween_property(view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		if view:
+			gem_views[to.y][to.x] = view
+			gem_views[from.y][from.x] = null
+			view.board_pos = to
+			
+			var dist = abs(to.y - from.y)
+			var duration = FALL_DURATION + (dist * 0.05)
+			var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
+			tween.tween_property(view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	await tween.finished
 
