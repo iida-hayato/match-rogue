@@ -311,6 +311,18 @@ func animate_spawns(spawns: Array) -> void:
 
 func check_game_end() -> void:
 	if stage_state.is_cleared():
+		return_board_to_deck()
 		stage_finished.emit(true)
 	elif stage_state.is_game_over():
+		return_board_to_deck()
 		stage_finished.emit(false)
+
+func return_board_to_deck() -> void:
+	print("[StagePlayScreen] Returning all gems on board to discard pile.")
+	for y in range(8):
+		for x in range(8):
+			var gem = board_state.get_gem(x, y)
+			if gem:
+				deck_state.discard(gem)
+				board_state.set_gem(x, y, null)
+	update_deck_ui()
