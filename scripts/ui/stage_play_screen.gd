@@ -26,7 +26,7 @@ var is_animating = false
 const SWAP_DURATION = 0.15
 const CLEAR_DURATION = 0.2
 const FALL_DURATION = 0.2
-const TILE_SIZE_ESTIMATE = 72.0
+const TILE_SIZE_ESTIMATE = 64.0
 const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
 
