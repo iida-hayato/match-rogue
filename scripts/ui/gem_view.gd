@@ -22,7 +22,14 @@ func setup_gem(gem: Object) -> void:
 	tooltip_text = _get_gem_description(gem)
 	
 	# Effect overlay
-...
+	effect_overlay.texture = null
+	for coat in gem.coat_ids:
+		# Check for primary effects that have visual overlays
+		match coat:
+			"rocket_v", "rocket_h", "bomb", "beam", "coin":
+				effect_overlay.texture = _get_cached_texture(EFFECT_PATH % coat)
+				break # Only one primary effect visual for MVP
+
 func _get_gem_description(gem: Object) -> String:
 	var desc = "Color: %s" % gem.definition_id.capitalize()
 	if gem.is_stone():
@@ -36,13 +43,6 @@ func _get_gem_description(gem: Object) -> String:
 			"beam": desc += "\nEffect: Diagonal Beam"
 			"coin": desc += "\nEffect: Gold Coin (+1G)"
 	return desc
-	effect_overlay.texture = null
-	for coat in gem.coat_ids:
-		# Check for primary effects that have visual overlays
-		match coat:
-			"rocket_v", "rocket_h", "bomb", "beam", "coin":
-				effect_overlay.texture = _get_cached_texture(EFFECT_PATH % coat)
-				break # Only one primary effect visual for MVP
 
 func _get_cached_texture(path: String) -> Texture2D:
 	if not texture_cache.has(path):
