@@ -7,9 +7,9 @@ signal stage_finished(success: bool)
 @onready var gold_label: Label = $MarginContainer/VBox/HUD/GoldLabel
 @onready var score_label: Label = $MarginContainer/VBox/ScoreContainer/ScoreLabel
 @onready var score_gauge: ProgressBar = $MarginContainer/VBox/ScoreContainer/ScoreGauge
-@onready var combo_label: Label = $AnnouncementLayer/ComboLabel
-@onready var clear_count_label: Label = $AnnouncementLayer/ClearCountLabel
-@onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardView
+@onready var combo_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel
+@onready var clear_count_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ClearCountLabel
+@onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/BoardView
 @onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 

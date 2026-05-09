@@ -74,9 +74,68 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BoardView" type="Control" parent="MarginContainer/VBox/MainLayout/BoardArea"]
+[node name="BoardStack" type="Control" parent="MarginContainer/VBox/MainLayout/BoardArea"]
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
+
+[node name="BoardView" type="Control" parent="MarginContainer/VBox/MainLayout/BoardArea/BoardStack"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AnnouncementLayer" type="Control" parent="MarginContainer/VBox/MainLayout/BoardArea/BoardStack"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ComboLabel" type="Label" parent="MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -60.0
+offset_right = 250.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 16
+theme_override_font_sizes/font_size = 96
+text = "3 COMBO!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ClearCountLabel" type="Label" parent="MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -140.0
+offset_right = 250.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 72
+text = "MATCH 5!"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="RightPanel" type="VBoxContainer" parent="MarginContainer/VBox/MainLayout"]
 custom_minimum_size = Vector2(250, 0)
@@ -111,52 +170,3 @@ text = "Relics"
 [node name="RelicsContainer" type="GridContainer" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 layout_mode = 2
 columns = 4
-
-[node name="AnnouncementLayer" type="Control" parent="."]
-mouse_filter = 2
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ComboLabel" type="Label" parent="AnnouncementLayer"]
-visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -250.0
-offset_right = 200.0
-offset_bottom = -150.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 96
-text = "3 COMBO!"
-horizontal_alignment = 1
-
-[node name="ClearCountLabel" type="Label" parent="AnnouncementLayer"]
-visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -350.0
-offset_right = 200.0
-offset_bottom = -250.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 72
-text = "MATCH 5!"
-horizontal_alignment = 1
