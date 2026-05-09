@@ -10,6 +10,7 @@ signal stage_finished(success: bool)
 @onready var combo_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel
 @onready var combo_score_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel/ComboScoreLabel
 @onready var clear_count_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ClearCountLabel
+@onready var tutorial_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/TutorialLabel
 @onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/BoardView
 @onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
@@ -114,6 +115,10 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	initial_refill()
 	update_hud()
 	update_deck_ui()
+	
+	if plan.stage_index == 0:
+		tutorial_label.visible = true
+		
 	print("[StagePlayScreen] Initialization complete for stage %d." % plan.stage_index)
 
 func update_deck_ui() -> void:
@@ -283,6 +288,9 @@ func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
 func resolve_board() -> void:
 	stage_state.chain_index = 0
 	var resolution_steps = 0
+	
+	if tutorial_label.visible:
+		tutorial_label.visible = false
 	
 	while true:
 		if stage_state.chain_index >= MAX_CHAIN_STEPS or resolution_steps >= MAX_RESOLUTION_STEPS:
