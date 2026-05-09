@@ -73,33 +73,78 @@ func update_ui(next_plan: Object) -> void:
 			price = int(price * 0.85) # 15% discount
 		
 		var panel = PanelContainer.new()
-		panel.custom_minimum_size = Vector2(180, 240)
+		panel.custom_minimum_size = Vector2(220, 320)
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 10)
 		panel.add_child(vbox)
+		
+		# Item Texture
+		var tex_rect = TextureRect.new()
+		tex_rect.custom_minimum_size = Vector2(80, 80)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		vbox.add_child(tex_rect)
+		
+		# Set texture based on item type
+		if item.type == "special_gem" or item.type == "coated_gem":
+			# Use GemView logic to show the gem
+			var mock_gem = GemInstance.new(item.color)
+			if item.has("effect"): mock_gem.add_coat(item.effect)
+			if item.has("coat"): mock_gem.add_coat(item.coat)
+			
+			# Simplified texture fetch
+			tex_rect.texture = load("res://assets/textures/gems/%s.svg" % item.color)
+			# Add overlay if special
+			if mock_gem.coat_ids.size() > 0:
+				var overlay = TextureRect.new()
+				overlay.texture = load("res://assets/textures/gems/effect_%s.svg" % mock_gem.coat_ids[0])
+				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				tex_rect.add_child(overlay)
 		
 		var name_label = Label.new()
 		name_label.text = item.name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size", 28)
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(name_label)
-		
-		var type_label = Label.new()
-		type_label.text = "[%s]" % item.type
-		type_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		vbox.add_child(type_label)
 		
 		var price_label = Label.new()
 		price_label.text = "%dG" % price
 		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		price_label.add_theme_font_size_override("font_size", 32)
+		price_label.add_theme_color_override("font_color", Color.YELLOW)
 		vbox.add_child(price_label)
 		
 		var buy_btn = Button.new()
-		buy_btn.text = "Buy"
+		buy_btn.text = "BUY"
+		buy_btn.custom_minimum_size = Vector2(0, 60)
+		buy_btn.add_theme_font_size_override("font_size", 24)
 		buy_btn.disabled = run_state.gold < price
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)
 		
+		# Tooltip
+		panel.tooltip_text = _get_item_description(item)
+		
 		items_container.add_child(panel)
+
+func _get_item_description(item: Dictionary) -> String:
+	match item.get("effect", item.get("coat", item.id)):
+		"rocket_v": return "Clears vertical column when matched."
+		"rocket_h": return "Clears horizontal row when matched."
+		"bomb": return "Clears surrounding 3x3 area when matched."
+		"beam": return "Clears diagonal X-shape when matched."
+		"coin": return "Earn +1 Gold when matched."
+		"gold": return "Earn +1 Gold when matched."
+		"score": return "Grants significant score bonus."
+		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
+		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
+		"relic_shop": return "Member Card: 15% discount on all shop items."
+		"item_hammer": return "Hammer: Click a gem to clear it immediately."
+		"item_shuffle": return "Shuffle: Reshuffles the board state."
+	return "No description available."
 
 func _on_buy_pressed(item: Dictionary, price: int) -> void:
 	if run_state.gold >= price:

@@ -18,18 +18,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 60
+theme_override_constants/separation = 80
 alignment = 1
 
 [node name="Title" type="Label" parent="VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 72
-text = "Match Rogue"
+theme_override_font_sizes/font_size = 120
+text = "MATCH ROGUE"
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(300, 80)
+custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 32
-text = "Start Run"
+theme_override_font_sizes/font_size = 48
+text = "START RUN"

@@ -21,24 +21,41 @@ grow_vertical = 2
 
 [node name="HUD" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 60
 alignment = 1
 
 [node name="StageLabel" type="Label" parent="VBox/HUD"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 48
 text = "Stage: 1-1"
-
-[node name="ScoreLabel" type="Label" parent="VBox/HUD"]
-layout_mode = 2
-text = "Score: 0 / 1000"
 
 [node name="MovesLabel" type="Label" parent="VBox/HUD"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_font_sizes/font_size = 64
 text = "Moves: 20"
 
 [node name="GoldLabel" type="Label" parent="VBox/HUD"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 48
 text = "Gold: 0"
+
+[node name="ScoreContainer" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ScoreLabel" type="Label" parent="VBox/ScoreContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "Score: 0 / 1000"
+horizontal_alignment = 1
+
+[node name="ScoreGauge" type="ProgressBar" parent="VBox/ScoreContainer"]
+custom_minimum_size = Vector2(800, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+show_percentage = false
 
 [node name="MainLayout" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
@@ -53,29 +70,83 @@ custom_minimum_size = Vector2(640, 640)
 layout_mode = 2
 
 [node name="RightPanel" type="VBoxContainer" parent="VBox/MainLayout"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 30
 
 [node name="DeckInfo" type="VBoxContainer" parent="VBox/MainLayout/RightPanel"]
 layout_mode = 2
 
 [node name="DrawPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Draw: 50"
 
 [node name="DiscardPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Discard: 0"
 
 [node name="ShuffleButton" type="Button" parent="VBox/MainLayout/RightPanel"]
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
+theme_override_font_sizes/font_size = 28
 text = "Shuffle"
 
 [node name="RelicsLabel" type="Label" parent="VBox/MainLayout/RightPanel"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Relics"
 
 [node name="RelicsContainer" type="GridContainer" parent="VBox/MainLayout/RightPanel"]
 layout_mode = 2
 columns = 4
+
+[node name="AnnouncementLayer" type="Control" parent="."]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ComboLabel" type="Label" parent="AnnouncementLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -250.0
+offset_right = 200.0
+offset_bottom = -150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 96
+text = "3 COMBO!"
+horizontal_alignment = 1
+
+[node name="ClearCountLabel" type="Label" parent="AnnouncementLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -350.0
+offset_right = 200.0
+offset_bottom = -250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 72
+text = "MATCH 5!"
+horizontal_alignment = 1

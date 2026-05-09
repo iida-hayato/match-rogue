@@ -3,9 +3,12 @@ extends Control
 signal stage_finished(success: bool)
 
 @onready var stage_label: Label = $VBox/HUD/StageLabel
-@onready var score_label: Label = $VBox/HUD/ScoreLabel
 @onready var moves_label: Label = $VBox/HUD/MovesLabel
 @onready var gold_label: Label = $VBox/HUD/GoldLabel
+@onready var score_label: Label = $VBox/ScoreContainer/ScoreLabel
+@onready var score_gauge: ProgressBar = $VBox/ScoreContainer/ScoreGauge
+@onready var combo_label: Label = $AnnouncementLayer/ComboLabel
+@onready var clear_count_label: Label = $AnnouncementLayer/ClearCountLabel
 @onready var board_view: Control = $VBox/MainLayout/BoardArea/BoardView
 @onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
@@ -28,6 +31,14 @@ const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
+var color_map = {
+	"red": Color.RED,
+	"blue": Color.BLUE,
+	"green": Color.GREEN,
+	"yellow": Color.YELLOW,
+	"purple": Color.PURPLE,
+	"stone": Color.DARK_GRAY
+}
 
 func _ready() -> void:
 	set_process_input(true)
@@ -116,6 +127,21 @@ func update_hud() -> void:
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
+	
+	score_gauge.max_value = stage_state.target_score
+	score_gauge.value = min(stage_state.score, stage_state.target_score)
+
+func show_announcement(label: Label, text: String) -> void:
+	label.text = text
+	label.visible = true
+	label.modulate.a = 1.0
+	label.scale = Vector2(0.5, 0.5)
+	
+	var tween = create_tween().set_parallel(true)
+	tween.tween_property(label, "modulate:a", 0.0, 1.2).set_delay(0.5)
+	tween.tween_property(label, "scale", Vector2(1.2, 1.2), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await tween.finished
+	label.visible = false
 
 func setup_board_views() -> void:
 	print("[StagePlayScreen] Setting up board views. Current children: %d" % board_view.get_child_count())
@@ -231,6 +257,24 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	v1.board_pos = p2
 	v2.board_pos = p1
 
+func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
+	if value_per_gem <= 0: return
+	
+	for pos in positions:
+		var label = Label.new()
+		label.text = str(value_per_gem)
+		label.add_theme_font_size_override("font_size", 32)
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 6)
+		
+		board_view.add_child(label)
+		label.position = Vector2(pos.x * TILE_SIZE_ESTIMATE + 20, pos.y * TILE_SIZE_ESTIMATE)
+		
+		var tween = create_tween().set_parallel(true)
+		tween.tween_property(label, "position:y", label.position.y - 60, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(label, "modulate:a", 0.0, 0.8).set_delay(0.2)
+		tween.finished.connect(func(): label.queue_free())
+
 func resolve_board() -> void:
 	stage_state.chain_index = 0
 	var resolution_steps = 0
@@ -248,6 +292,8 @@ func resolve_board() -> void:
 		var matched_positions = []
 		for m in matches:
 			matched_positions.append_array(m)
+			if m.size() >= 4:
+				show_announcement(clear_count_label, "MATCH %d!" % m.size())
 			
 		# Identify effect positions (Rockets, Bombs, etc.)
 		var effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions)
@@ -289,6 +335,13 @@ func resolve_board() -> void:
 		
 		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
+		
+		if all_cleared_positions.size() > 0:
+			_spawn_score_popups(all_cleared_positions, score_result.delta / all_cleared_positions.size())
+		
+		if stage_state.chain_index > 0:
+			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1))
+			
 		stage_state.chain_index += 1
 		resolution_steps += 1
 		
