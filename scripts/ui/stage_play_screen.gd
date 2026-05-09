@@ -28,14 +28,6 @@ const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
-var color_map = {
-	"red": Color.RED,
-	"blue": Color.BLUE,
-	"green": Color.GREEN,
-	"yellow": Color.YELLOW,
-	"purple": Color.PURPLE,
-	"stone": Color.DARK_GRAY
-}
 
 func _ready() -> void:
 	set_process_input(true)
@@ -177,7 +169,7 @@ func update_gem_view(x: int, y: int) -> void:
 	var gem = board_state.get_gem(x, y)
 	var view = gem_views[y][x]
 	if gem and view:
-		view.set_gem_color(color_map[gem.definition_id])
+		view.setup_gem(gem)
 		view.visible = true
 		view.position = Vector2(x * TILE_SIZE_ESTIMATE, y * TILE_SIZE_ESTIMATE)
 		view.board_pos = Vector2i(x, y)
@@ -367,7 +359,7 @@ func animate_spawns(spawns: Array) -> void:
 		board_view.add_child(gem_view)
 		gem_view.board_pos = to
 		gem_view.gem_clicked.connect(_on_gem_clicked)
-		gem_view.set_gem_color(color_map[spawn.gem.definition_id])
+		gem_view.setup_gem(spawn.gem)
 		gem_views[to.y][to.x] = gem_view
 		
 		gem_view.position = Vector2(from.x * TILE_SIZE_ESTIMATE, from.y * TILE_SIZE_ESTIMATE)

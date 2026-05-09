@@ -11,8 +11,6 @@ signal shop_finished()
 var reroll_button: Button
 var remove_gem_button: Button
 
-const ShopGenerator = preload("res://scripts/domain/shop_generator.gd")
-
 var run_state
 var current_inventory: Array[Dictionary] = []
 var reroll_cost: int = 3

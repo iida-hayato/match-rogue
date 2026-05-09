@@ -3,8 +3,6 @@ extends Control
 var run_state: RunState
 var current_screen: Control
 
-const ShopGenerator = preload("res://scripts/domain/shop_generator.gd")
-
 func _ready() -> void:
 	load_title_screen()
 
