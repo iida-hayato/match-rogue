@@ -8,6 +8,7 @@ signal stage_finished(success: bool)
 @onready var score_label: Label = $MarginContainer/VBox/ScoreContainer/ScoreLabel
 @onready var score_gauge: ProgressBar = $MarginContainer/VBox/ScoreContainer/ScoreGauge
 @onready var combo_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel
+@onready var combo_score_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel/ComboScoreLabel
 @onready var clear_count_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ClearCountLabel
 @onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/BoardView
 @onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
@@ -131,11 +132,15 @@ func update_hud() -> void:
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
 
-func show_announcement(label: Label, text: String) -> void:
+func show_announcement(label: Label, text: String, sub_text: String = "") -> void:
 	label.text = text
 	label.visible = true
 	label.modulate.a = 1.0
 	label.scale = Vector2(0.5, 0.5)
+	
+	if label == combo_label:
+		combo_score_label.text = sub_text
+		combo_score_label.visible = sub_text != ""
 	
 	var tween = create_tween().set_parallel(true)
 	tween.tween_property(label, "modulate:a", 0.0, 1.2).set_delay(0.5)
@@ -346,7 +351,7 @@ func resolve_board() -> void:
 			_spawn_score_popups(all_cleared_positions, score_result.delta / all_cleared_positions.size())
 		
 		if stage_state.chain_index > 0:
-			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1))
+			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result.delta)
 			
 		stage_state.chain_index += 1
 		resolution_steps += 1
