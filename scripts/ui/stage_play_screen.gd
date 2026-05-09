@@ -2,16 +2,16 @@ extends Control
 
 signal stage_finished(success: bool)
 
-@onready var stage_label: Label = $VBox/HUD/StageLabel
-@onready var moves_label: Label = $VBox/HUD/MovesLabel
-@onready var gold_label: Label = $VBox/HUD/GoldLabel
-@onready var score_label: Label = $VBox/ScoreContainer/ScoreLabel
-@onready var score_gauge: ProgressBar = $VBox/ScoreContainer/ScoreGauge
+@onready var stage_label: Label = $MarginContainer/VBox/HUD/StageLabel
+@onready var moves_label: Label = $MarginContainer/VBox/HUD/MovesLabel
+@onready var gold_label: Label = $MarginContainer/VBox/HUD/GoldLabel
+@onready var score_label: Label = $MarginContainer/VBox/ScoreContainer/ScoreLabel
+@onready var score_gauge: ProgressBar = $MarginContainer/VBox/ScoreContainer/ScoreGauge
 @onready var combo_label: Label = $AnnouncementLayer/ComboLabel
 @onready var clear_count_label: Label = $AnnouncementLayer/ClearCountLabel
-@onready var board_view: Control = $VBox/MainLayout/BoardArea/BoardView
-@onready var draw_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
-@onready var discard_label: Label = $VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+@onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardView
+@onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
+@onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
