@@ -18,6 +18,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 40
+
+[node name="MarginContainer" type="MarginContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/margin_top = 40
 
 [node name="HUD" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
@@ -43,7 +48,7 @@ text = "Gold: 0"
 
 [node name="ScoreContainer" type="VBoxContainer" parent="VBox"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 10
 
 [node name="ScoreLabel" type="Label" parent="VBox/ScoreContainer"]
 layout_mode = 2
@@ -55,7 +60,12 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(800, 30)
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_constants/outline_size = 0
 show_percentage = false
+
+[node name="Spacer" type="Control" parent="VBox"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
 
 [node name="MainLayout" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
