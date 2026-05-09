@@ -2,11 +2,11 @@ extends Control
 
 signal continue_requested()
 
-@onready var title_label: Label = $VBox/Title
-@onready var score_label: Label = $VBox/Stats/ScoreLabel
-@onready var moves_label: Label = $VBox/Stats/MovesLabel
-@onready var gold_total_label: Label = $VBox/GoldInfo/TotalLabel
-@onready var breakdown_container: VBoxContainer = $VBox/GoldInfo/Breakdown
+@onready var title_label: Label = $MarginContainer/VBox/Title
+@onready var score_label: Label = $MarginContainer/VBox/Stats/ScoreLabel
+@onready var moves_label: Label = $MarginContainer/VBox/Stats/MovesLabel
+@onready var gold_total_label: Label = $MarginContainer/VBox/GoldInfo/TotalLabel
+@onready var breakdown_container: VBoxContainer = $MarginContainer/VBox/GoldInfo/Breakdown
 
 func _ready() -> void:
 	if get_tree().current_scene == self:

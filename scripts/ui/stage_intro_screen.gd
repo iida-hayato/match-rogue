@@ -2,10 +2,10 @@ extends Control
 
 signal start_requested()
 
-@onready var title_label: Label = $VBox/Title
-@onready var target_label: Label = $VBox/Stats/TargetLabel
-@onready var moves_label: Label = $VBox/Stats/MovesLabel
-@onready var obstacle_label: Label = $VBox/Stats/ObstacleLabel
+@onready var title_label: Label = $MarginContainer/VBox/Title
+@onready var target_label: Label = $MarginContainer/VBox/Stats/TargetLabel
+@onready var moves_label: Label = $MarginContainer/VBox/Stats/MovesLabel
+@onready var obstacle_label: Label = $MarginContainer/VBox/Stats/ObstacleLabel
 
 func initialize(stage_name: String, plan: Object) -> void:
 	title_label.text = "Stage %s" % stage_name

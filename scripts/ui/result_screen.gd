@@ -2,8 +2,8 @@ extends Control
 
 signal restart_requested()
 
-@onready var stats_label: Label = $VBox/StatsLabel
-@onready var restart_button: Button = $VBox/RestartButton
+@onready var stats_label: Label = $MarginContainer/VBox/StatsLabel
+@onready var restart_button: Button = $MarginContainer/VBox/RestartButton
 
 func _ready() -> void:
 	restart_button.pressed.connect(_on_restart_pressed)

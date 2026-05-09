@@ -20,63 +20,66 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.1, 0.12, 0.1, 0.95)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 50
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 40
 alignment = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="VBox"]
-layout_mode = 2
-theme_override_constants/margin_top = 40
-
-[node name="Title" type="Label" parent="VBox"]
+[node name="Title" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 84
 text = "Stage 1-1 Clear"
 horizontal_alignment = 1
 
-[node name="Stats" type="VBoxContainer" parent="VBox"]
+[node name="Stats" type="VBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="ScoreLabel" type="Label" parent="VBox/Stats"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBox/Stats"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
 text = "Score: 1200 / 1000"
 horizontal_alignment = 1
 
-[node name="MovesLabel" type="Label" parent="VBox/Stats"]
+[node name="MovesLabel" type="Label" parent="MarginContainer/VBox/Stats"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Moves Left: 5"
 horizontal_alignment = 1
 
-[node name="GoldInfo" type="VBoxContainer" parent="VBox"]
+[node name="GoldInfo" type="VBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TotalLabel" type="Label" parent="VBox/GoldInfo"]
+[node name="TotalLabel" type="Label" parent="MarginContainer/VBox/GoldInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0, 1)
 theme_override_font_sizes/font_size = 64
 text = "Gold Earned: 14"
 horizontal_alignment = 1
 
-[node name="Breakdown" type="VBoxContainer" parent="VBox/GoldInfo"]
+[node name="Breakdown" type="VBoxContainer" parent="MarginContainer/VBox/GoldInfo"]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="ContinueButton" type="Button" parent="VBox"]
+[node name="ContinueButton" type="Button" parent="MarginContainer/VBox"]
 custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
-text = "Go to Shop"
+text = "GO TO SHOP"
 
-[connection signal="pressed" from="VBox/ContinueButton" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="MarginContainer/VBox/ContinueButton" to="." method="_on_continue_pressed"]

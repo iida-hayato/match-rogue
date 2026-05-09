@@ -11,104 +11,108 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 40
-
-[node name="MarginContainer" type="MarginContainer" parent="VBox"]
-layout_mode = 2
+theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
 
-[node name="HUD" type="HBoxContainer" parent="VBox"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="HUD" type="HBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 60
 alignment = 1
 
-[node name="StageLabel" type="Label" parent="VBox/HUD"]
+[node name="StageLabel" type="Label" parent="MarginContainer/VBox/HUD"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
 text = "Stage: 1-1"
 
-[node name="MovesLabel" type="Label" parent="VBox/HUD"]
+[node name="MovesLabel" type="Label" parent="MarginContainer/VBox/HUD"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
 theme_override_font_sizes/font_size = 64
 text = "Moves: 20"
 
-[node name="GoldLabel" type="Label" parent="VBox/HUD"]
+[node name="GoldLabel" type="Label" parent="MarginContainer/VBox/HUD"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0, 1)
 theme_override_font_sizes/font_size = 48
 text = "Gold: 0"
 
-[node name="ScoreContainer" type="VBoxContainer" parent="VBox"]
+[node name="ScoreContainer" type="VBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ScoreLabel" type="Label" parent="VBox/ScoreContainer"]
+[node name="ScoreLabel" type="Label" parent="MarginContainer/VBox/ScoreContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 56
 text = "Score: 0 / 1000"
 horizontal_alignment = 1
 
-[node name="ScoreGauge" type="ProgressBar" parent="VBox/ScoreContainer"]
+[node name="ScoreGauge" type="ProgressBar" parent="MarginContainer/VBox/ScoreContainer"]
 custom_minimum_size = Vector2(800, 30)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/outline_size = 0
 show_percentage = false
 
-[node name="Spacer" type="Control" parent="VBox"]
-custom_minimum_size = Vector2(0, 20)
+[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="MainLayout" type="HBoxContainer" parent="VBox"]
+[node name="MainLayout" type="HBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BoardArea" type="CenterContainer" parent="VBox/MainLayout"]
+[node name="BoardArea" type="CenterContainer" parent="MarginContainer/VBox/MainLayout"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BoardView" type="Control" parent="VBox/MainLayout/BoardArea"]
+[node name="BoardView" type="Control" parent="MarginContainer/VBox/MainLayout/BoardArea"]
 custom_minimum_size = Vector2(576, 576)
 layout_mode = 2
 
-[node name="RightPanel" type="VBoxContainer" parent="VBox/MainLayout"]
+[node name="RightPanel" type="VBoxContainer" parent="MarginContainer/VBox/MainLayout"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_constants/separation = 30
 
-[node name="DeckInfo" type="VBoxContainer" parent="VBox/MainLayout/RightPanel"]
+[node name="DeckInfo" type="VBoxContainer" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 layout_mode = 2
 
-[node name="DrawPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
+[node name="DrawPileLabel" type="Label" parent="MarginContainer/VBox/MainLayout/RightPanel/DeckInfo"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Draw: 50"
 
-[node name="DiscardPileLabel" type="Label" parent="VBox/MainLayout/RightPanel/DeckInfo"]
+[node name="DiscardPileLabel" type="Label" parent="MarginContainer/VBox/MainLayout/RightPanel/DeckInfo"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Discard: 0"
 
-[node name="ShuffleButton" type="Button" parent="VBox/MainLayout/RightPanel"]
+[node name="ShuffleButton" type="Button" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Shuffle"
 
-[node name="RelicsLabel" type="Label" parent="VBox/MainLayout/RightPanel"]
+[node name="RelicsLabel" type="Label" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Relics"
 
-[node name="RelicsContainer" type="GridContainer" parent="VBox/MainLayout/RightPanel"]
+[node name="RelicsContainer" type="GridContainer" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 layout_mode = 2
 columns = 4
 

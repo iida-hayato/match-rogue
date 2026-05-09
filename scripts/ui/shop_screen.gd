@@ -2,10 +2,10 @@ extends Control
 
 signal shop_finished()
 
-@onready var gold_label: Label = $VBox/GoldLabel
-@onready var next_stage_info: Label = $VBox/NextStageInfo
-@onready var next_button: Button = $VBox/NextButton
-@onready var items_container: HBoxContainer = $VBox/ItemsContainer
+@onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
+@onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
+@onready var next_button: Button = $MarginContainer/VBox/NextButton
+@onready var items_container: HBoxContainer = $MarginContainer/VBox/ItemsContainer
 
 # New service buttons (need to be added to tscn)
 var reroll_button: Button
@@ -20,19 +20,24 @@ func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
 	
 	# Create service UI if not exists in tscn
+	var main_vbox = $MarginContainer/VBox
 	var service_hbox = HBoxContainer.new()
 	service_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	service_hbox.add_theme_constant_override("separation", 20)
-	$VBox.add_child(service_hbox)
-	$VBox.move_child(service_hbox, 4) # Insert before next stage info
+	service_hbox.add_theme_constant_override("separation", 40)
+	main_vbox.add_child(service_hbox)
+	main_vbox.move_child(service_hbox, 4) # Insert before next stage info
 	
 	reroll_button = Button.new()
 	reroll_button.text = "Reroll: %dG" % reroll_cost
+	reroll_button.custom_minimum_size = Vector2(250, 70)
+	reroll_button.add_theme_font_size_override("font_size", 28)
 	reroll_button.pressed.connect(_on_reroll_pressed)
 	service_hbox.add_child(reroll_button)
 	
 	remove_gem_button = Button.new()
 	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
+	remove_gem_button.custom_minimum_size = Vector2(300, 70)
+	remove_gem_button.add_theme_font_size_override("font_size", 28)
 	remove_gem_button.pressed.connect(_on_remove_gem_pressed)
 	service_hbox.add_child(remove_gem_button)
 
