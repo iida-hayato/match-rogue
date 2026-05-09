@@ -336,6 +336,12 @@ func resolve_board() -> void:
 		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
 		
+		# Update RunState cumulative stats
+		run_state.total_score += score_result.delta
+		run_state.total_gems_cleared += cleared_gems.size()
+		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
+		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
+		
 		if all_cleared_positions.size() > 0:
 			_spawn_score_popups(all_cleared_positions, score_result.delta / all_cleared_positions.size())
 		

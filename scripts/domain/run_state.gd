@@ -7,6 +7,13 @@ var master_deck: Array[GemInstance] = []
 var relic_ids: Array[String] = []
 var gold: int = 0
 var total_gold_earned: int = 0
+
+# Cumulative stats
+var total_score: int = 0
+var total_gems_cleared: int = 0
+var max_chain: int = 0
+var largest_clear: int = 0
+
 var run_seed: int
 
 func _init() -> void:
