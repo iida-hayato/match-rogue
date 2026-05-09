@@ -1,13 +1,14 @@
 extends Control
 
 signal shop_finished()
+signal remove_gem_requested()
 
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
 @onready var next_button: Button = $MarginContainer/VBox/NextButton
 @onready var items_container: HBoxContainer = $MarginContainer/VBox/ItemsContainer
 
-# New service buttons (need to be added to tscn)
+# New service buttons
 var reroll_button: Button
 var remove_gem_button: Button
 
@@ -19,7 +20,7 @@ var remove_gem_cost: int = 8
 func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
 	
-	# Create service UI if not exists in tscn
+	# Create service UI
 	var main_vbox = $MarginContainer/VBox
 	var service_hbox = HBoxContainer.new()
 	service_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -66,7 +67,10 @@ func update_ui(next_plan: Object) -> void:
 	]
 	
 	reroll_button.text = "Reroll: %dG" % reroll_cost
+	reroll_button.disabled = run_state.gold < reroll_cost
+	
 	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
+	remove_gem_button.disabled = run_state.gold < remove_gem_cost or run_state.master_deck.size() <= 0
 	
 	# Clear and rebuild inventory
 	for child in items_container.get_children():
@@ -91,16 +95,12 @@ func update_ui(next_plan: Object) -> void:
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		vbox.add_child(tex_rect)
 		
-		# Set texture based on item type
+		# Set texture
 		if item.type == "special_gem" or item.type == "coated_gem":
-			# Use GemView logic to show the gem
 			var mock_gem = GemInstance.new(item.color)
 			if item.has("effect"): mock_gem.add_coat(item.effect)
 			if item.has("coat"): mock_gem.add_coat(item.coat)
-			
-			# Simplified texture fetch
 			tex_rect.texture = load("res://assets/textures/gems/%s.svg" % item.color)
-			# Add overlay if special
 			if mock_gem.coat_ids.size() > 0:
 				var overlay = TextureRect.new()
 				overlay.texture = load("res://assets/textures/gems/effect_%s.svg" % mock_gem.coat_ids[0])
@@ -130,9 +130,7 @@ func update_ui(next_plan: Object) -> void:
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)
 		
-		# Tooltip
 		panel.tooltip_text = _get_item_description(item)
-		
 		items_container.add_child(panel)
 
 func _get_item_description(item: Dictionary) -> String:
@@ -162,7 +160,7 @@ func apply_purchase(item: Dictionary) -> void:
 	match item.type:
 		"special_gem":
 			var gem = GemInstance.new(item.color)
-			gem.add_coat(item.effect) # Temporary use coat for effect
+			gem.add_coat(item.effect)
 			run_state.master_deck.append(gem)
 		"relic":
 			run_state.add_relic(item.id)
@@ -171,7 +169,6 @@ func apply_purchase(item: Dictionary) -> void:
 			gem.add_coat(item.coat)
 			run_state.master_deck.append(gem)
 		"consumable":
-			# Future: add to consumable list
 			print("Purchased item: %s" % item.id)
 
 func _on_reroll_pressed() -> void:
@@ -183,12 +180,9 @@ func _on_reroll_pressed() -> void:
 
 func _on_remove_gem_pressed() -> void:
 	if run_state.gold >= remove_gem_cost:
-		# For MVP, just remove a random non-special gem if possible
-		if run_state.master_deck.size() > 0:
-			run_state.gold -= remove_gem_cost
-			run_state.master_deck.pop_back() # Simple remove for now
-			remove_gem_cost += 2
-			update_ui(StageMaster.create_plan(run_state.stage_index))
+		remove_gem_requested.emit()
+		run_state.gold -= remove_gem_cost
+		remove_gem_cost += 2
 
 func _on_next_button_pressed() -> void:
 	shop_finished.emit()

@@ -146,7 +146,49 @@ func load_shop() -> void:
 
 	shop_screen.initialize_shop(run_state, next_plan, inventory)
 	shop_screen.shop_finished.connect(_on_shop_finished)
+	shop_screen.remove_gem_requested.connect(load_deck_edit_screen.bind("remove", 1))
 
 
 func _on_shop_finished() -> void:
 	load_stage_intro(run_state.stage_index)
+
+func load_deck_edit_screen(mode: String, count: int) -> void:
+	var previous_screen = current_screen
+	
+	var edit_scene = load("res://scenes/screens/deck_edit_screen.tscn")
+	var edit_screen = edit_scene.instantiate()
+	add_child(edit_screen)
+	edit_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	current_screen = edit_screen
+	
+	if previous_screen:
+		previous_screen.visible = false
+	
+	edit_screen.initialize(run_state, mode, count)
+	
+	edit_screen.selection_finished.connect(func(indices):
+		_handle_deck_edit_result(mode, indices)
+		edit_screen.queue_free()
+		current_screen = previous_screen
+		if current_screen:
+			current_screen.visible = true
+			if current_screen.has_method("update_ui"):
+				current_screen.update_ui(StageMaster.create_plan(run_state.stage_index))
+	)
+	
+	edit_screen.cancelled.connect(func():
+		edit_screen.queue_free()
+		current_screen = previous_screen
+		if current_screen:
+			current_screen.visible = true
+	)
+
+func _handle_deck_edit_result(mode: String, indices: Array[int]) -> void:
+	match mode:
+		"remove":
+			var sorted_indices = indices.duplicate()
+			sorted_indices.sort()
+			sorted_indices.reverse()
+			for i in sorted_indices:
+				run_state.master_deck.remove_at(i)
+			print("[MainScene] Removed %d gems from master deck." % indices.size())
