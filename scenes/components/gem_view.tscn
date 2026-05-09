@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dyulhj1v1ed5d" path="res://scripts/ui/gem_view.gd" id="1_script"]
 
 [node name="GemView" type="TextureRect"]
-custom_minimum_size = Vector2(72, 72)
+custom_minimum_size = Vector2(64, 64)
 expand_mode = 1
 stretch_mode = 5
 script = ExtResource("1_script")
