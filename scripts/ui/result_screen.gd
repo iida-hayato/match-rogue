@@ -58,11 +58,11 @@ func initialize_result(run: Object) -> void:
 func _set_stat(label_text: String, value_text: String) -> void:
 	var label = Label.new()
 	label.text = label_text + ":"
-	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_font_size_override("font_size", 24)
 	
 	var val = Label.new()
 	val.text = value_text
-	val.add_theme_font_size_override("font_size", 32)
+	val.add_theme_font_size_override("font_size", 28)
 	val.add_theme_color_override("font_color", Color.YELLOW)
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	
