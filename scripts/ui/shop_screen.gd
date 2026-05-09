@@ -95,15 +95,14 @@ func update_ui(next_plan: Object) -> void:
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		vbox.add_child(tex_rect)
 		
-		# Set texture
+		# Set texture based on item type
 		if item.type == "special_gem" or item.type == "coated_gem":
-			var mock_gem = GemInstance.new(item.color)
-			if item.has("effect"): mock_gem.add_coat(item.effect)
-			if item.has("coat"): mock_gem.add_coat(item.coat)
-			tex_rect.texture = load("res://assets/textures/gems/%s.svg" % item.color)
-			if mock_gem.coat_ids.size() > 0:
+			var effect_id = item.get("effect", item.get("coat", ""))
+			tex_rect.texture = GemTextureManager.get_gem_texture(item.color)
+			
+			if effect_id != "":
 				var overlay = TextureRect.new()
-				overlay.texture = load("res://assets/textures/gems/effect_%s.svg" % mock_gem.coat_ids[0])
+				overlay.texture = GemTextureManager.get_effect_texture(effect_id)
 				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				tex_rect.add_child(overlay)

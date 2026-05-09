@@ -7,16 +7,9 @@ signal gem_clicked(pos: Vector2i)
 var board_pos: Vector2i
 var is_pressing = false
 
-const TEXTURE_PATH = "res://assets/textures/gems/%s.svg"
-const EFFECT_PATH = "res://assets/textures/gems/effect_%s.svg"
-
-# Pre-cache textures to avoid frame drops
-static var texture_cache = {}
-
 func setup_gem(gem: Object) -> void:
-	# Base texture
-	var base_name = gem.definition_id
-	texture = _get_cached_texture(TEXTURE_PATH % base_name)
+	# Base texture from Manager (preloaded)
+	texture = GemTextureManager.get_gem_texture(gem.definition_id)
 	
 	# Tooltip
 	tooltip_text = _get_gem_description(gem)
@@ -24,11 +17,10 @@ func setup_gem(gem: Object) -> void:
 	# Effect overlay
 	effect_overlay.texture = null
 	for coat in gem.coat_ids:
-		# Check for primary effects that have visual overlays
-		match coat:
-			"rocket_v", "rocket_h", "bomb", "beam", "coin":
-				effect_overlay.texture = _get_cached_texture(EFFECT_PATH % coat)
-				break # Only one primary effect visual for MVP
+		var tex = GemTextureManager.get_effect_texture(coat)
+		if tex:
+			effect_overlay.texture = tex
+			break
 
 func _get_gem_description(gem: Object) -> String:
 	var desc = "Color: %s" % gem.definition_id.capitalize()
@@ -43,15 +35,6 @@ func _get_gem_description(gem: Object) -> String:
 			"beam": desc += "\nEffect: Diagonal Beam"
 			"coin": desc += "\nEffect: Gold Coin (+1G)"
 	return desc
-
-func _get_cached_texture(path: String) -> Texture2D:
-	if not texture_cache.has(path):
-		if FileAccess.file_exists(path):
-			texture_cache[path] = load(path)
-		else:
-			push_warning("Gem texture not found: " + path)
-			return null
-	return texture_cache[path]
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
