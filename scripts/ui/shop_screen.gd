@@ -29,15 +29,15 @@ func _ready() -> void:
 	
 	reroll_button = Button.new()
 	reroll_button.text = "Reroll: %dG" % reroll_cost
-	reroll_button.custom_minimum_size = Vector2(250, 70)
-	reroll_button.add_theme_font_size_override("font_size", 28)
+	reroll_button.custom_minimum_size = Vector2(200, 60)
+	reroll_button.add_theme_font_size_override("font_size", 24)
 	reroll_button.pressed.connect(_on_reroll_pressed)
 	service_hbox.add_child(reroll_button)
 	
 	remove_gem_button = Button.new()
 	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
-	remove_gem_button.custom_minimum_size = Vector2(300, 70)
-	remove_gem_button.add_theme_font_size_override("font_size", 28)
+	remove_gem_button.custom_minimum_size = Vector2(250, 60)
+	remove_gem_button.add_theme_font_size_override("font_size", 24)
 	remove_gem_button.pressed.connect(_on_remove_gem_pressed)
 	service_hbox.add_child(remove_gem_button)
 
@@ -78,15 +78,15 @@ func update_ui(next_plan: Object) -> void:
 			price = int(price * 0.85) # 15% discount
 		
 		var panel = PanelContainer.new()
-		panel.custom_minimum_size = Vector2(220, 320)
+		panel.custom_minimum_size = Vector2(200, 260)
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 10)
+		vbox.add_theme_constant_override("separation", 5)
 		panel.add_child(vbox)
 		
 		# Item Texture
 		var tex_rect = TextureRect.new()
-		tex_rect.custom_minimum_size = Vector2(80, 80)
+		tex_rect.custom_minimum_size = Vector2(60, 60)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		vbox.add_child(tex_rect)
@@ -111,21 +111,21 @@ func update_ui(next_plan: Object) -> void:
 		var name_label = Label.new()
 		name_label.text = item.name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 28)
+		name_label.add_theme_font_size_override("font_size", 22)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(name_label)
 		
 		var price_label = Label.new()
 		price_label.text = "%dG" % price
 		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price_label.add_theme_font_size_override("font_size", 32)
+		price_label.add_theme_font_size_override("font_size", 28)
 		price_label.add_theme_color_override("font_color", Color.YELLOW)
 		vbox.add_child(price_label)
 		
 		var buy_btn = Button.new()
 		buy_btn.text = "BUY"
-		buy_btn.custom_minimum_size = Vector2(0, 60)
-		buy_btn.add_theme_font_size_override("font_size", 24)
+		buy_btn.custom_minimum_size = Vector2(0, 50)
+		buy_btn.add_theme_font_size_override("font_size", 20)
 		buy_btn.disabled = run_state.gold < price
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)

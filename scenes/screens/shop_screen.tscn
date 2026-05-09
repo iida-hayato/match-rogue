@@ -28,42 +28,42 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 100
+theme_override_constants/margin_top = 40
 theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 40
+theme_override_constants/margin_bottom = 20
 
 [node name="VBox" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 15
 alignment = 1
 
 [node name="Title" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 40
 text = "SHOP"
 horizontal_alignment = 1
 
 [node name="GoldLabel" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0, 1)
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 48
 text = "Gold: 100"
 horizontal_alignment = 1
 
 [node name="ItemsContainer" type="HBoxContainer" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="NextStageInfo" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
 text = "Next Stage: 1-2 (Target: 1500)"
 horizontal_alignment = 1
 
 [node name="NextButton" type="Button" parent="MarginContainer/VBox"]
-custom_minimum_size = Vector2(400, 90)
+custom_minimum_size = Vector2(400, 70)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 32
 text = "START NEXT STAGE"
