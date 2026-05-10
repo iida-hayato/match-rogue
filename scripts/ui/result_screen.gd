@@ -1,6 +1,7 @@
 extends Control
 
 signal restart_requested()
+signal endless_requested()
 
 @onready var title_label: Label = $MarginContainer/VBox/Title
 @onready var reched_label: Label = $MarginContainer/VBox/ReachedLabel
@@ -8,16 +9,19 @@ signal restart_requested()
 @onready var deck_summary: Label = $MarginContainer/VBox/DeckSummary
 @onready var relic_summary: Label = $MarginContainer/VBox/RelicSummary
 @onready var restart_button: Button = $MarginContainer/VBox/RestartButton
+@onready var endless_button: Button = $MarginContainer/VBox/EndlessButton
 
 func _ready() -> void:
+	restart_button.pressed.connect(_on_restart_pressed)
+	endless_button.pressed.connect(_on_endless_pressed)
 	if get_tree().current_scene == self:
 		var mock_run = RunState.new()
-		mock_run.stage_index = 5
-		mock_run.total_score = 125000
-		mock_run.total_gems_cleared = 850
-		mock_run.total_gold_earned = 150
-		mock_run.max_chain = 12
-		mock_run.largest_clear = 18
+		mock_run.stage_index = 14
+		mock_run.total_score = 250000
+		mock_run.total_gems_cleared = 1200
+		mock_run.total_gold_earned = 300
+		mock_run.max_chain = 15
+		mock_run.largest_clear = 24
 		var mock_relics: Array[String] = ["relic_mining", "relic_chain"]
 		mock_run.relic_ids = mock_relics
 		for i in range(20): mock_run.master_deck.append(GemInstance.new("red"))
@@ -28,9 +32,11 @@ func initialize_result(run: Object) -> void:
 		title_label.text = "RUN CLEAR!"
 		title_label.add_theme_color_override("font_color", Color.GOLD)
 		reched_label.text = "Congratulations! You conquered the mines."
+		endless_button.visible = !run.is_endless
 	else:
 		title_label.text = "RUN FINISHED"
 		reched_label.text = "Reached Stage %s" % run.get_current_stage_name()
+		endless_button.visible = false
 	
 	_set_stat("Total Score", str(run.total_score))
 	_set_stat("Gems Cleared", str(run.total_gems_cleared))
@@ -71,3 +77,6 @@ func _set_stat(label_text: String, value_text: String) -> void:
 
 func _on_restart_pressed() -> void:
 	restart_requested.emit()
+
+func _on_endless_pressed() -> void:
+	endless_requested.emit()

@@ -28,9 +28,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 60
-theme_override_constants/margin_top = 60
+theme_override_constants/margin_top = 40
 theme_override_constants/margin_right = 60
-theme_override_constants/margin_bottom = 60
+theme_override_constants/margin_bottom = 40
 
 [node name="VBox" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
@@ -80,11 +80,24 @@ autowrap_mode = 2
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="RestartButton" type="Button" parent="MarginContainer/VBox"]
-custom_minimum_size = Vector2(350, 70)
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="RestartButton" type="Button" parent="MarginContainer/VBox/Buttons"]
+custom_minimum_size = Vector2(300, 70)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 32
 text = "BACK TO TITLE"
 
-[connection signal="pressed" from="MarginContainer/VBox/RestartButton" to="." method="_on_restart_pressed"]
+[node name="EndlessButton" type="Button" parent="MarginContainer/VBox/Buttons"]
+custom_minimum_size = Vector2(400, 70)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 32
+text = "CONTINUE (ENDLESS)"
+
+[connection signal="pressed" from="MarginContainer/VBox/Buttons/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="MarginContainer/VBox/Buttons/EndlessButton" to="." method="_on_endless_pressed"]

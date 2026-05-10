@@ -14,6 +14,7 @@ var total_gems_cleared: int = 0
 var max_chain: int = 0
 var largest_clear: int = 0
 
+var is_endless: bool = false
 var run_seed: int
 
 func _init() -> void:

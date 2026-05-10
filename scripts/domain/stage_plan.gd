@@ -13,7 +13,10 @@ func _init(idx: int) -> void:
 	if stage_index < curve.size():
 		target_score = curve[stage_index]
 	else:
-		target_score = curve.back() + (stage_index - curve.size() + 1) * 50000
+		# Endless Mode: Exponential growth (e.g., 50% increase per stage)
+		var base_endless = curve.back()
+		var endless_idx = stage_index - curve.size() + 1
+		target_score = int(base_endless * pow(1.5, endless_idx))
 	
 	move_limit = 15 # Start with 15 moves as per provisional spec
 	if stage_index >= 10:

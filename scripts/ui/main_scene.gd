@@ -129,6 +129,13 @@ func load_result_screen() -> void:
 	current_screen = result_screen
 	result_screen.initialize_result(run_state)
 	result_screen.restart_requested.connect(load_title_screen)
+	result_screen.endless_requested.connect(_on_endless_requested)
+
+func _on_endless_requested() -> void:
+	run_state.is_endless = true
+	# Stage index is already at 14 (end of normal run), 
+	# so load_shop will prepare for stage 14 (first endless stage)
+	load_shop()
 
 func load_shop() -> void:
 	if current_screen:
