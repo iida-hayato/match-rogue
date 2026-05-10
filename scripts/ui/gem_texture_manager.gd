@@ -21,8 +21,17 @@ static var effects = {
 	"coin": preload("res://assets/textures/gems/effect_coin.svg"),
 }
 
+static var relics = {
+	"relic_mining": preload("res://assets/textures/relics/relic_mining.svg"),
+	"relic_chain": preload("res://assets/textures/relics/relic_chain.svg"),
+	"relic_shop": preload("res://assets/textures/relics/relic_shop.svg"),
+}
+
 static func get_gem_texture(id: String) -> Texture2D:
 	return textures.get(id)
 
 static func get_effect_texture(id: String) -> Texture2D:
 	return effects.get(id)
+
+static func get_relic_texture(id: String) -> Texture2D:
+	return relics.get(id)

@@ -106,6 +106,11 @@ func update_ui(next_plan: Object) -> void:
 				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				tex_rect.add_child(overlay)
+		elif item.type == "relic":
+			tex_rect.texture = GemTextureManager.get_relic_texture(item.id)
+		elif item.type == "consumable":
+			# Placeholder color/rect for consumables if no SVG yet
+			tex_rect.self_modulate = Color.WHITE
 		
 		var name_label = Label.new()
 		name_label.text = item.name
