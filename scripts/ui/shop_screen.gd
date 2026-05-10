@@ -8,6 +8,14 @@ signal remove_gem_requested()
 @onready var next_button: Button = $MarginContainer/VBox/NextButton
 @onready var items_container: HBoxContainer = $MarginContainer/VBox/ItemsContainer
 
+@onready var detail_overlay: ColorRect = $ItemDetailOverlay
+@onready var detail_name: Label = $ItemDetailOverlay/Panel/VBox/NameLabel
+@onready var detail_icon: TextureRect = $ItemDetailOverlay/Panel/VBox/IconRect
+@onready var detail_desc: Label = $ItemDetailOverlay/Panel/VBox/DescLabel
+@onready var detail_price: Label = $ItemDetailOverlay/Panel/VBox/PriceLabel
+@onready var detail_buy_btn: Button = $ItemDetailOverlay/Panel/VBox/Buttons/DetailBuyButton
+@onready var detail_close_btn: Button = $ItemDetailOverlay/Panel/VBox/Buttons/CloseButton
+
 # New service buttons
 var reroll_button: Button
 var remove_gem_button: Button
@@ -19,6 +27,7 @@ var remove_gem_cost: int = 8
 
 func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
+	detail_close_btn.pressed.connect(func(): detail_overlay.visible = false)
 	
 	# Create service UI
 	var main_vbox = $MarginContainer/VBox
@@ -82,6 +91,8 @@ func update_ui(next_plan: Object) -> void:
 			price = int(price * 0.85) # 15% discount
 		
 		var panel = PanelContainer.new()
+		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		panel.gui_input.connect(_on_item_panel_input.bind(item, price))
 		panel.custom_minimum_size = Vector2(200, 260)
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -95,11 +106,10 @@ func update_ui(next_plan: Object) -> void:
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		vbox.add_child(tex_rect)
 		
-		# Set texture based on item type
+		# Set texture
 		if item.type == "special_gem" or item.type == "coated_gem":
 			var effect_id = item.get("effect", item.get("coat", ""))
 			tex_rect.texture = GemTextureManager.get_gem_texture(item.color)
-			
 			if effect_id != "":
 				var overlay = TextureRect.new()
 				overlay.texture = GemTextureManager.get_effect_texture(effect_id)
@@ -108,9 +118,6 @@ func update_ui(next_plan: Object) -> void:
 				tex_rect.add_child(overlay)
 		elif item.type == "relic":
 			tex_rect.texture = GemTextureManager.get_relic_texture(item.id)
-		elif item.type == "consumable":
-			# Placeholder color/rect for consumables if no SVG yet
-			tex_rect.self_modulate = Color.WHITE
 		
 		var name_label = Label.new()
 		name_label.text = item.name
@@ -136,6 +143,42 @@ func update_ui(next_plan: Object) -> void:
 		
 		panel.tooltip_text = _get_item_description(item)
 		items_container.add_child(panel)
+
+func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_show_item_detail(item, price)
+
+func _show_item_detail(item: Dictionary, price: int) -> void:
+	detail_name.text = item.name
+	detail_desc.text = _get_item_description(item)
+	detail_price.text = "Cost: %dG" % price
+	
+	# Icon Setup
+	for child in detail_icon.get_children(): child.queue_free()
+	if item.type == "special_gem" or item.type == "coated_gem":
+		var effect_id = item.get("effect", item.get("coat", ""))
+		detail_icon.texture = GemTextureManager.get_gem_texture(item.color)
+		if effect_id != "":
+			var overlay = TextureRect.new()
+			overlay.texture = GemTextureManager.get_effect_texture(effect_id)
+			overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			detail_icon.add_child(overlay)
+	elif item.type == "relic":
+		detail_icon.texture = GemTextureManager.get_relic_texture(item.id)
+	else:
+		detail_icon.texture = null
+		
+	detail_buy_btn.disabled = run_state.gold < price
+	for connection in detail_buy_btn.pressed.get_connections():
+		detail_buy_btn.pressed.disconnect(connection.callable)
+		
+	detail_buy_btn.pressed.connect(func():
+		_on_buy_pressed(item, price)
+		detail_overlay.visible = false
+	)
+	
+	detail_overlay.visible = true
 
 func _get_item_description(item: Dictionary) -> String:
 	match item.get("effect", item.get("coat", item.id)):

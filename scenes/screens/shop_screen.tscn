@@ -67,3 +67,78 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 32
 text = "START NEXT STAGE"
+
+[node name="ItemDetailOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="Panel" type="PanelContainer" parent="ItemDetailOverlay"]
+custom_minimum_size = Vector2(500, 600)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -300.0
+offset_right = 250.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="ItemDetailOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="ItemDetailOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Item Name"
+horizontal_alignment = 1
+
+[node name="IconRect" type="TextureRect" parent="ItemDetailOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DescLabel" type="Label" parent="ItemDetailOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Detailed description goes here..."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="ItemDetailOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0, 1)
+theme_override_font_sizes/font_size = 36
+text = "Cost: 10G"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="ItemDetailOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="CloseButton" type="Button" parent="ItemDetailOverlay/Panel/VBox/Buttons"]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "CLOSE"
+
+[node name="DetailBuyButton" type="Button" parent="ItemDetailOverlay/Panel/VBox/Buttons"]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "BUY"
