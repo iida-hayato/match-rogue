@@ -136,9 +136,10 @@ func load_shop() -> void:
 		current_screen.queue_free()
 
 	var next_plan = StageMaster.create_plan(run_state.stage_index)
-	var inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index)
+	var inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
 
 	var shop_screen_scene = load("res://scenes/screens/shop_screen.tscn")
+
 	var shop_screen = shop_screen_scene.instantiate()
 	add_child(shop_screen)
 	shop_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

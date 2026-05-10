@@ -45,7 +45,7 @@ func _ready() -> void:
 	if get_tree().current_scene == self:
 		var mock_run = RunState.new()
 		var mock_plan = StageMaster.create_plan(1)
-		var mock_inv = ShopGenerator.generate_shop_inventory(1)
+		var mock_inv = ShopGenerator.generate_shop_inventory(1, mock_run.relic_ids)
 		initialize_shop(mock_run, mock_plan, mock_inv)
 
 func initialize_shop(run: Object, next_plan: Object, inventory: Array[Dictionary]) -> void:
@@ -178,7 +178,7 @@ func apply_purchase(item: Dictionary) -> void:
 func _on_reroll_pressed() -> void:
 	if run_state.gold >= reroll_cost:
 		run_state.gold -= reroll_cost
-		current_inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index)
+		current_inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
 		reroll_cost += 1
 		update_ui(StageMaster.create_plan(run_state.stage_index))
 

@@ -1,15 +1,20 @@
 class_name ShopGenerator
 extends RefCounted
 
-static func generate_shop_inventory(_stage_index: int) -> Array[Dictionary]:
+static func generate_shop_inventory(_stage_index: int, owned_relics: Array[String] = []) -> Array[Dictionary]:
 	var inventory: Array[Dictionary] = []
 	
 	# 特殊Gem x2
 	inventory.append(generate_special_gem())
 	inventory.append(generate_special_gem())
 	
-	# レリック x1
-	inventory.append(generate_relic())
+	# レリック x1 (取得済みは除外)
+	var relic = generate_relic(owned_relics)
+	if relic:
+		inventory.append(relic)
+	else:
+		# 全レリック所持時は代わりに消費アイテム
+		inventory.append(generate_consumable())
 	
 	# コート付きGem or 消費アイテム x1
 	if randf() < 0.5:
@@ -29,13 +34,23 @@ static func generate_special_gem() -> Dictionary:
 	]
 	return items[randi() % items.size()]
 
-static func generate_relic() -> Dictionary:
-	var items = [
+static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
+	var pool = [
 		{"id": "relic_mining", "name": "Mining Emblem", "type": "relic", "price": 22},
 		{"id": "relic_chain", "name": "Chain Gear", "type": "relic", "price": 20},
 		{"id": "relic_shop", "name": "Member Card", "type": "relic", "price": 18}
 	]
-	return items[randi() % items.size()]
+	
+	# フィルター
+	var available = []
+	for item in pool:
+		if not owned_relics.has(item.id):
+			available.append(item)
+	
+	if available.is_empty():
+		return {} # null dictionary indicates no relic available
+		
+	return available[randi() % available.size()]
 
 static func generate_coated_gem() -> Dictionary:
 	var items = [
