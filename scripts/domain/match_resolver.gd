@@ -1,52 +1,118 @@
 class_name MatchResolver
 extends RefCounted
 
-static func find_matches(board) -> Array[Array]:
-	var raw_groups = []
+enum MatchShape {
+	NONE,
+	LINE_3,
+	LINE_4,
+	LINE_5,
+	L_SHAPE,
+	T_SHAPE,
+	CROSS,
+	BOX_4
+}
 
-	# Horizontal matches
-	for y in range(board.height):
-		var x = 0
-		while x < board.width:
-			var gem = board.get_gem(x, y)
-			if gem == null:
-				x += 1
-				continue
-			var run = [Vector2i(x, y)]
-			var scan_x = x + 1
-			while scan_x < board.width:
-				var next_gem = board.get_gem(scan_x, y)
-				if next_gem != null and next_gem.definition_id == gem.definition_id:
-					run.append(Vector2i(scan_x, y))
-					scan_x += 1
-				else:
-					break
-			if run.size() >= 3:
-				raw_groups.append(run)
-			x = scan_x
+static func find_matches(board, include_boxes: bool = false) -> Array[Dictionary]:
+	var raw_groups = []
+...
+	var merged_groups = merge_groups(raw_groups)
 	
-	# Vertical matches
-	for x in range(board.width):
-		var y = 0
-		while y < board.height:
-			var gem = board.get_gem(x, y)
-			if gem == null:
-				y += 1
-				continue
-			var run = [Vector2i(x, y)]
-			var scan_y = y + 1
-			while scan_y < board.height:
-				var next_gem = board.get_gem(x, scan_y)
-				if next_gem != null and next_gem.definition_id == gem.definition_id:
-					run.append(Vector2i(x, scan_y))
-					scan_y += 1
-				else:
+	# Detect Boxes if enabled
+	if include_boxes:
+		var boxes = find_box_matches(board)
+		# Merge boxes into groups if they overlap, or add as new groups
+		for box in boxes:
+			var merged_into_existing = false
+			for group in merged_groups:
+				if _groups_overlap(box, group):
+					group.append_array(box) # _dedupe will happen in analyze_shape
+					merged_into_existing = true
 					break
-			if run.size() >= 3:
-				raw_groups.append(run)
-			y = scan_y
-				
-	return merge_groups(raw_groups)
+			if not merged_into_existing:
+				merged_groups.append(box)
+
+	var results: Array[Dictionary] = []
+	for group in merged_groups:
+		var deduped = _dedupe_positions(group)
+		results.append({
+			"positions": deduped,
+			"shape": analyze_shape(board, deduped)
+		})
+	return results
+
+static func _dedupe_positions(group: Array) -> Array[Vector2i]:
+	var deduped: Array[Vector2i] = []
+	var seen = {}
+	for pos in group:
+		if not seen.has(pos):
+			seen[pos] = true
+			deduped.append(pos)
+	return deduped
+
+static func analyze_shape(board, positions: Array[Vector2i]) -> MatchShape:
+	if positions.size() < 3: return MatchShape.NONE
+	
+	# Check for Box 4 (2x2)
+	if positions.size() == 4:
+		var min_x = 99; var max_x = -1
+		var min_y = 99; var max_y = -1
+		for p in positions:
+			min_x = min(min_x, p.x); max_x = max(max_x, p.x)
+			min_y = min(min_y, p.y); max_y = max(max_y, p.y)
+		if (max_x - min_x) == 1 and (max_y - min_y) == 1:
+			return MatchShape.BOX_4
+
+	# Calculate spans
+	var xs = {}; var ys = {}
+	for p in positions:
+		xs[p.x] = xs.get(p.x, 0) + 1
+		ys[p.y] = ys.get(p.y, 0) + 1
+	
+	var max_h_run = 0; for v in xs.values(): max_h_run = max(max_h_run, v)
+	var max_v_run = 0; for v in ys.values(): max_v_run = max(max_v_run, v)
+	
+	# Cross / T / L logic
+	var multi_line = (xs.size() > 1 and ys.size() > 1)
+	
+	if multi_line:
+		# Check for intersections
+		var intersections = 0
+		for x in xs:
+			if xs[x] >= 3:
+				for y in ys:
+					if ys[y] >= 3 and Vector2i(x, y) in positions:
+						intersections += 1
+		
+		if intersections > 0:
+			# It's a complex shape
+			# CROSS: center of a 5+ match
+			# T-SHAPE: intersection is not at an end
+			# L-SHAPE: intersection is at an end
+			# For now, let's simplify: if it has 5+ gems and is multi-line, it's at least a T or Cross
+			if positions.size() >= 5:
+				return MatchShape.CROSS if intersections > 1 or positions.size() >= 6 else MatchShape.T_SHAPE
+			return MatchShape.L_SHAPE
+			
+	# Straight lines
+	if positions.size() >= 5: return MatchShape.LINE_5
+	if positions.size() >= 4: return MatchShape.LINE_4
+	
+	return MatchShape.LINE_3
+
+static func find_box_matches(board) -> Array[Array]:
+	var boxes = []
+	for y in range(board.height - 1):
+		for x in range(board.width - 1):
+			var g1 = board.get_gem(x, y)
+			var g2 = board.get_gem(x+1, y)
+			var g3 = board.get_gem(x, y+1)
+			var g4 = board.get_gem(x+1, y+1)
+			if g1 and g2 and g3 and g4:
+				if g1.definition_id == g2.definition_id and \
+				   g1.definition_id == g3.definition_id and \
+				   g1.definition_id == g4.definition_id:
+					boxes.append([Vector2i(x,y), Vector2i(x+1,y), Vector2i(x,y+1), Vector2i(x+1,y+1)])
+	return boxes
 
 static func merge_groups(groups: Array) -> Array[Array]:
 	if groups.is_empty():

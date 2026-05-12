@@ -38,7 +38,8 @@ static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
 	var pool = [
 		{"id": "relic_mining", "name": "Mining Emblem", "type": "relic", "price": 22},
 		{"id": "relic_chain", "name": "Chain Gear", "type": "relic", "price": 20},
-		{"id": "relic_shop", "name": "Member Card", "type": "relic", "price": 18}
+		{"id": "relic_shop", "name": "Member Card", "type": "relic", "price": 18},
+		{"id": "relic_box_match", "name": "Magic Box", "type": "relic", "price": 25}
 	]
 	
 	# フィルター

@@ -288,29 +288,58 @@ func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
 func resolve_board() -> void:
 	stage_state.chain_index = 0
 	var resolution_steps = 0
-	
+
 	if tutorial_label.visible:
 		tutorial_label.visible = false
-	
+
 	while true:
 		if stage_state.chain_index >= MAX_CHAIN_STEPS or resolution_steps >= MAX_RESOLUTION_STEPS:
 			print("[StagePlayScreen] Chain Overload triggered!")
 			break
-			
-		var matches = MatchResolver.find_matches(board_state)
-		if matches.size() == 0:
+
+		var include_boxes = run_state.relic_ids.has("relic_box_match")
+		var match_results = MatchResolver.find_matches(board_state, include_boxes)
+		if match_results.size() == 0:
 			break
-		
-		# Identify direct match positions
+
+		# Identify direct match positions and shapes
 		var matched_positions = []
-		for m in matches:
-			matched_positions.append_array(m)
-			if m.size() >= 4:
-				show_announcement(clear_count_label, "MATCH %d!" % m.size())
-			
-		# Identify effect positions (Rockets, Bombs, etc.)
+		for res in match_results:
+			matched_positions.append_array(res.positions)
+			# Trigger Special Action for non-LINE_3 shapes
+			if res.shape != MatchResolver.MatchShape.LINE_3:
+				_trigger_special_action_for_shape(res)
+
+		# Identify effect positions (Rockets, Bombs, etc. - including those triggered above)
 		var effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions)
-		
+...
+func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
+	var shape = match_res.shape
+	var positions = match_res.positions
+	var center = positions[0] # Simplification
+
+	print("[StagePlayScreen] Special Action for Shape: %s" % shape)
+
+	# Determine effect type
+	var effect = ""
+	match shape:
+		MatchResolver.MatchShape.LINE_4, MatchResolver.MatchShape.L_SHAPE:
+			effect = "rocket_v" if randf() > 0.5 else "rocket_h"
+		MatchResolver.MatchShape.T_SHAPE, MatchResolver.MatchShape.CROSS, MatchResolver.MatchShape.LINE_5:
+			effect = "bomb"
+		MatchResolver.MatchShape.BOX_4:
+			effect = "coin"
+
+	if effect != "":
+		# Apply immediate effect to the board at the "center" 
+		# (We can improve center detection later)
+		# For now, let's just mark the matched gems with these effects so they trigger
+		# during the same resolution step in find_effect_positions.
+		var gem = board_state.get_gem(center.x, center.y)
+		if gem:
+			gem.add_coat(effect)
+			print("[StagePlayScreen] Applied %s to gem at %s" % [effect, center])
+
 		# All cleared positions (matches + effects)
 		var all_cleared_positions = matched_positions.duplicate()
 		for pos in effect_positions:

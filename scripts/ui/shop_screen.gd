@@ -192,6 +192,7 @@ func _get_item_description(item: Dictionary) -> String:
 		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
 		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
 		"relic_shop": return "Member Card: 15% discount on all shop items."
+		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
 		"item_hammer": return "Hammer: Click a gem to clear it immediately."
 		"item_shuffle": return "Shuffle: Reshuffles the board state."
 	return "No description available."
