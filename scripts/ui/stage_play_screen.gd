@@ -17,15 +17,16 @@ signal view_deck_requested()
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 @onready var relics_container: GridContainer = $MarginContainer/VBox/MainLayout/RightPanel/RelicsContainer
 
-const RunState_ = preload("res://scripts/domain/run_state.gd")
-const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
-const DeckState_ = preload("res://scripts/domain/deck_state.gd")
-const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
-const BoardState_ = preload("res://scripts/domain/board_state.gd")
-const StageState_ = preload("res://scripts/domain/stage_state.gd")
-const MatchResolver_ = preload("res://scripts/domain/match_resolver.gd")
-const CascadeResolver_ = preload("res://scripts/domain/cascade_resolver.gd")
-const ScoreCalculator_ = preload("res://scripts/domain/score_calculator.gd")
+# Use load() instead of preload() for domain scripts to break potential cyclic dependencies
+var RunState_ = load("res://scripts/domain/run_state.gd")
+var GemInstance_ = load("res://scripts/domain/gem_instance.gd")
+var DeckState_ = load("res://scripts/domain/deck_state.gd")
+var StageMaster_ = load("res://scripts/domain/stage_master.gd")
+var BoardState_ = load("res://scripts/domain/board_state.gd")
+var StageState_ = load("res://scripts/domain/stage_state.gd")
+var MatchResolver_ = load("res://scripts/domain/match_resolver.gd")
+var CascadeResolver_ = load("res://scripts/domain/cascade_resolver.gd")
+var ScoreCalculator_ = load("res://scripts/domain/score_calculator.gd")
 const GemTextureManager_ = preload("res://scripts/ui/gem_texture_manager.gd")
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
@@ -45,26 +46,24 @@ const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
-var color_map = {
-	"red": Color.RED,
-	"blue": Color.BLUE,
-	"green": Color.GREEN,
-	"yellow": Color.YELLOW,
-	"purple": Color.PURPLE,
-	"stone": Color.DARK_GRAY
-}
 
 func _ready() -> void:
 	set_process_input(true)
 	_setup_pause_overlay()
-	$MarginContainer/VBox/MainLayout/RightPanel/ViewDeckButton.pressed.connect(_on_view_deck_pressed)
+	
+	# Fix button connection path
+	var view_deck_btn = $MarginContainer/VBox/MainLayout/RightPanel/ViewDeckButton
+	if view_deck_btn:
+		view_deck_btn.pressed.connect(_on_view_deck_pressed)
+	
 	# Standalone test
 	if get_tree().current_scene == self:
 		var mock_run = RunState_.new()
 		var initial_gems: Array = []
 		var defs = ["red", "blue", "green", "yellow", "purple"]
 		for i in range(100):
-			initial_gems.append(GemInstance_.new(defs[i % defs.size()]))
+			var g = GemInstance_.new(defs[i % defs.size()])
+			initial_gems.append(g)
 		var mock_deck = DeckState_.new(initial_gems)
 		var mock_plan = StageMaster_.create_plan(0)
 		initialize_stage(mock_run, mock_deck, mock_plan)
@@ -100,7 +99,7 @@ func _input(event: InputEvent) -> void:
 			int(floor(mouse_pos.y / TILE_SIZE_ESTIMATE))
 		)
 		
-		if grid_pos != selected_pos and is_within_bounds(grid_pos):
+		if grid_pos != selected_pos and is_within_bounds(grid_pos.x, grid_pos.y):
 			if is_adjacent(selected_pos, grid_pos):
 				var p1 = selected_pos
 				var p2 = grid_pos
@@ -108,8 +107,8 @@ func _input(event: InputEvent) -> void:
 				selected_pos = null
 				await try_swap(p1, p2)
 
-func is_within_bounds(pos: Vector2i) -> bool:
-	return pos.x >= 0 and pos.x < 8 and pos.y >= 0 and pos.y < 8
+func is_within_bounds(x: int, y: int) -> bool:
+	return x >= 0 and x < 8 and y >= 0 and y < 8
 
 func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	print("[StagePlayScreen] Initializing Stage: %d (Target Score: %d)" % [plan.stage_index, plan.target_score])

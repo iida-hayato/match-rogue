@@ -4,11 +4,11 @@ signal shop_finished()
 signal remove_gem_requested()
 signal view_deck_requested()
 
-const RunState = preload("res://scripts/domain/run_state.gd")
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
-const StageMaster = preload("res://scripts/domain/stage_master.gd")
-const GemTextureManager = preload("res://scripts/ui/gem_texture_manager.gd")
-const ShopGenerator = preload("res://scripts/domain/shop_generator.gd")
+const RunState_ = preload("res://scripts/domain/run_state.gd")
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
+const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
+const GemTextureManager_ = preload("res://scripts/ui/gem_texture_manager.gd")
+const ShopGenerator_ = preload("res://scripts/domain/shop_generator.gd")
 
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
@@ -67,9 +67,9 @@ func _ready() -> void:
 	service_hbox.add_child(remove_gem_button)
 
 	if get_tree().current_scene == self:
-		var mock_run = RunState.new()
-		var mock_plan = StageMaster.create_plan(1)
-		var mock_inv = ShopGenerator.generate_shop_inventory(1, mock_run.relic_ids)
+		var mock_run = RunState_.new()
+		var mock_plan = StageMaster_.create_plan(1)
+		var mock_inv = ShopGenerator_.generate_shop_inventory(1, mock_run.relic_ids)
 		initialize_shop(mock_run, mock_plan, mock_inv)
 
 func initialize_shop(run: Object, next_plan: Object, inventory: Array[Dictionary]) -> void:
@@ -124,15 +124,15 @@ func update_ui(next_plan: Object) -> void:
 		# Set texture
 		if item.type == "special_gem" or item.type == "coated_gem":
 			var effect_id = item.get("effect", item.get("coat", ""))
-			tex_rect.texture = GemTextureManager.get_gem_texture(item.color)
+			tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
 			if effect_id != "":
 				var overlay = TextureRect.new()
-				overlay.texture = GemTextureManager.get_effect_texture(effect_id)
+				overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
 				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				tex_rect.add_child(overlay)
 		elif item.type == "relic":
-			tex_rect.texture = GemTextureManager.get_relic_texture(item.id)
+			tex_rect.texture = GemTextureManager_.get_relic_texture(item.id)
 		
 		var name_label = Label.new()
 		name_label.text = item.name
@@ -180,9 +180,45 @@ func update_relics() -> void:
 		tex_rect.custom_minimum_size = Vector2(48, 48)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tex_rect.texture = GemTextureManager.get_relic_texture(relic_id)
+		tex_rect.texture = GemTextureManager_.get_relic_texture(relic_id)
 		tex_rect.tooltip_text = _get_relic_description(relic_id)
 		relics_container.add_child(tex_rect)
+
+func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_show_item_detail(item, price)
+
+func _show_item_detail(item: Dictionary, price: int) -> void:
+	detail_name.text = item.name
+	detail_desc.text = _get_item_description(item)
+	detail_price.text = "Cost: %dG" % price
+	
+	# Icon Setup
+	for child in detail_icon.get_children(): child.queue_free()
+	if item.type == "special_gem" or item.type == "coated_gem":
+		var effect_id = item.get("effect", item.get("coat", ""))
+		detail_icon.texture = GemTextureManager_.get_gem_texture(item.color)
+		if effect_id != "":
+			var overlay = TextureRect.new()
+			overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
+			overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			detail_icon.add_child(overlay)
+	elif item.type == "relic":
+		detail_icon.texture = GemTextureManager_.get_relic_texture(item.id)
+	else:
+		detail_icon.texture = null
+		
+	detail_buy_btn.disabled = run_state.gold < price
+	for connection in detail_buy_btn.pressed.get_connections():
+		detail_buy_btn.pressed.disconnect(connection.callable)
+		
+	detail_buy_btn.pressed.connect(func():
+		_on_buy_pressed(item, price)
+		detail_overlay.visible = false
+	)
+	
+	detail_overlay.visible = true
 
 func _get_item_description(item: Dictionary) -> String:
 	match item.get("effect", item.get("coat", item.id)):
@@ -214,18 +250,18 @@ func _on_buy_pressed(item: Dictionary, price: int) -> void:
 		run_state.gold -= price
 		apply_purchase(item)
 		current_inventory.erase(item)
-		update_ui(StageMaster.create_plan(run_state.stage_index))
+		update_ui(StageMaster_.create_plan(run_state.stage_index))
 
 func apply_purchase(item: Dictionary) -> void:
 	match item.type:
 		"special_gem":
-			var gem = GemInstance.new(item.color)
+			var gem = GemInstance_.new(item.color)
 			gem.add_coat(item.effect)
 			run_state.master_deck.append(gem)
 		"relic":
 			run_state.add_relic(item.id)
 		"coated_gem":
-			var gem = GemInstance.new(item.color)
+			var gem = GemInstance_.new(item.color)
 			gem.add_coat(item.coat)
 			run_state.master_deck.append(gem)
 		"consumable":
@@ -234,9 +270,9 @@ func apply_purchase(item: Dictionary) -> void:
 func _on_reroll_pressed() -> void:
 	if run_state.gold >= reroll_cost:
 		run_state.gold -= reroll_cost
-		current_inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
+		current_inventory = ShopGenerator_.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
 		reroll_cost += 1
-		update_ui(StageMaster.create_plan(run_state.stage_index))
+		update_ui(StageMaster_.create_plan(run_state.stage_index))
 
 func _on_remove_gem_pressed() -> void:
 	if run_state.gold >= remove_gem_cost:

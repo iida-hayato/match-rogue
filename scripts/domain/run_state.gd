@@ -1,8 +1,10 @@
 extends RefCounted
 
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
+
 var stage_index: int = 0
 var max_stages: int = 14
-var master_deck: Array[GemInstance] = []
+var master_deck: Array = [] # Array[GemInstance_]
 var relic_ids: Array[String] = []
 var gold: int = 0
 var total_gold_earned: int = 0

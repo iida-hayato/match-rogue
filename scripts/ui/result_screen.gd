@@ -3,22 +3,22 @@ extends Control
 signal restart_requested()
 signal endless_requested()
 
-const RunState = preload("res://scripts/domain/run_state.gd")
-const GemInstance = preload("res://scripts/domain/gem_instance.gd")
+const RunState_ = preload("res://scripts/domain/run_state.gd")
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
 
 @onready var title_label: Label = $MarginContainer/VBox/Title
 @onready var reched_label: Label = $MarginContainer/VBox/ReachedLabel
 @onready var stats_grid: GridContainer = $MarginContainer/VBox/StatsGrid
 @onready var deck_summary: Label = $MarginContainer/VBox/DeckSummary
 @onready var relic_summary: Label = $MarginContainer/VBox/RelicSummary
-@onready var restart_button: Button = $MarginContainer/VBox/RestartButton
-@onready var endless_button: Button = $MarginContainer/VBox/EndlessButton
+@onready var restart_button: Button = $MarginContainer/VBox/Buttons/RestartButton
+@onready var endless_button: Button = $MarginContainer/VBox/Buttons/EndlessButton
 
 func _ready() -> void:
 	restart_button.pressed.connect(_on_restart_pressed)
 	endless_button.pressed.connect(_on_endless_pressed)
 	if get_tree().current_scene == self:
-		var mock_run = RunState.new()
+		var mock_run = RunState_.new()
 		mock_run.stage_index = 14
 		mock_run.total_score = 250000
 		mock_run.total_gems_cleared = 1200
@@ -27,8 +27,9 @@ func _ready() -> void:
 		mock_run.largest_clear = 24
 		var mock_relics: Array[String] = ["relic_mining", "relic_chain"]
 		mock_run.relic_ids = mock_relics
-		for i in range(20): mock_run.master_deck.append(GemInstance.new("red"))
+		for i in range(20): mock_run.master_deck.append(GemInstance_.new("red"))
 		initialize_result(mock_run)
+
 
 func initialize_result(run: Object) -> void:
 	if run.stage_index >= run.max_stages:

@@ -1,13 +1,15 @@
 extends RefCounted
 
-var draw_pile: Array[GemInstance] = []
-var discard_pile: Array[GemInstance] = []
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
 
-func _init(initial_gems: Array[GemInstance] = []) -> void:
+var draw_pile: Array = [] # Array[GemInstance_]
+var discard_pile: Array = [] # Array[GemInstance_]
+
+func _init(initial_gems: Array = []) -> void:
 	draw_pile = initial_gems
 	draw_pile.shuffle()
 
-func draw_one() -> GemInstance:
+func draw_one() -> Object: # GemInstance_
 	if draw_pile.size() == 0:
 		if discard_pile.size() == 0:
 			# Fallback if somehow both are empty
@@ -16,7 +18,7 @@ func draw_one() -> GemInstance:
 	
 	return draw_pile.pop_back()
 
-func discard(gem: GemInstance) -> void:
+func discard(gem: Object) -> void:
 	if gem:
 		discard_pile.append(gem)
 

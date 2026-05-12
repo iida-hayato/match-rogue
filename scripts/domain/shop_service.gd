@@ -18,7 +18,7 @@ static func calculate_gold_reward_breakdown(stage_state: Object, target_score: i
 		"coin_gem_bonus": coin_gem_bonus
 	}
 
-static func remove_gem(run_state: RunState, _gem_index: int) -> bool:
+static func remove_gem(run_state: Object, _gem_index: int) -> bool:
 	var cost = 50
 	if run_state.gold >= cost:
 		run_state.gold -= cost
