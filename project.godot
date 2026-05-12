@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="match-rogue"
+config/name="GemTaro"
 run/main_scene="res://scenes/app/main_scene.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"

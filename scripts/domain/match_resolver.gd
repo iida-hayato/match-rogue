@@ -114,22 +114,37 @@ static func analyze_shape(_board, positions: Array[Vector2i]) -> MatchShape:
 	var multi_line = (xs.size() > 1 and ys.size() > 1)
 	
 	if multi_line:
-		var intersections = 0
-		for x in xs:
-			if xs[x] >= 3:
-				for y in ys:
-					if ys[y] >= 3 and Vector2i(x, y) in positions:
-						intersections += 1
+		var branch_count = 0
+		for pos in positions:
+			if xs.get(pos.x, 0) >= 2 and ys.get(pos.y, 0) >= 2:
+				branch_count = max(branch_count, _count_branches(pos, positions))
 		
-		if intersections > 0:
-			if positions.size() >= 5:
-				return MatchShape.CROSS if intersections > 1 or positions.size() >= 6 else MatchShape.T_SHAPE
+		if branch_count >= 4:
+			return MatchShape.CROSS
+		if branch_count == 3:
+			return MatchShape.T_SHAPE
+		if branch_count == 2:
 			return MatchShape.L_SHAPE
 			
 	if positions.size() >= 5: return MatchShape.LINE_5
 	if positions.size() >= 4: return MatchShape.LINE_4
 	
 	return MatchShape.LINE_3
+
+static func _count_branches(center: Vector2i, positions: Array[Vector2i]) -> int:
+	var branches = 0
+	if _has_position(positions, Vector2i(center.x - 1, center.y)):
+		branches += 1
+	if _has_position(positions, Vector2i(center.x + 1, center.y)):
+		branches += 1
+	if _has_position(positions, Vector2i(center.x, center.y - 1)):
+		branches += 1
+	if _has_position(positions, Vector2i(center.x, center.y + 1)):
+		branches += 1
+	return branches
+
+static func _has_position(positions: Array[Vector2i], target: Vector2i) -> bool:
+	return target in positions
 
 static func find_box_matches(board) -> Array:
 	var boxes = []

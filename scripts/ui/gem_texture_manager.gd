@@ -25,6 +25,9 @@ static var relics = {
 	"relic_chain": preload("res://assets/textures/relics/relic_chain.svg"),
 	"relic_shop": preload("res://assets/textures/relics/relic_shop.svg"),
 	"relic_box_match": preload("res://assets/textures/relics/relic_box_match.svg"),
+	"relic_rocket_workshop": preload("res://assets/textures/relics/relic_mining.svg"),
+	"relic_bomb_workshop": preload("res://assets/textures/relics/relic_chain.svg"),
+	"relic_prism_secret": preload("res://assets/textures/relics/relic_shop.svg"),
 }
 
 static func get_gem_texture(id: String) -> Texture2D:

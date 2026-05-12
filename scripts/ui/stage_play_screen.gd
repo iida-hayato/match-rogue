@@ -182,6 +182,9 @@ func _get_relic_description(id: String) -> String:
 		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
 		"relic_shop": return "Member Card: 15% discount on all shop items."
 		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
+		"relic_rocket_workshop": return "Rocket Workshop: 4 in a row creates a rocket gem."
+		"relic_bomb_workshop": return "Bomb Workshop: T and cross matches create a bomb gem."
+		"relic_prism_secret": return "Prism Secret: 5 in a row creates a diagonal beam gem."
 	return "No description available."
 
 func show_announcement(label: Label, text: String, sub_text: String = "") -> void:
@@ -334,27 +337,36 @@ func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
 		tween.tween_property(label, "modulate:a", 0.0, 0.8).set_delay(0.2)
 		tween.finished.connect(func(): label.queue_free())
 
-func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
+func _create_special_spawn_for_shape(match_res: Dictionary) -> Dictionary:
 	var shape = match_res.shape
 	var positions = match_res.positions
-	var center = positions[0]
+	var center = _get_special_spawn_position(positions, shape)
 
-	print("[StagePlayScreen] Special Action for Shape: %s" % shape)
-
-	var effect = ""
-	match shape:
-		MatchResolver_.MatchShape.LINE_4, MatchResolver_.MatchShape.L_SHAPE:
-			effect = "rocket_v" if randf() > 0.5 else "rocket_h"
-		MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS, MatchResolver_.MatchShape.LINE_5:
-			effect = "bomb"
-		MatchResolver_.MatchShape.BOX_4:
-			effect = "coin"
+	var effect = _get_special_effect_for_shape(shape)
 
 	if effect != "":
 		var gem = board_state.get_gem(center.x, center.y)
 		if gem:
-			gem.add_coat(effect)
-			print("[StagePlayScreen] Applied %s to gem at %s" % [effect, center])
+			var spawned_gem = gem.duplicate()
+			spawned_gem.add_coat(effect)
+			print("[StagePlayScreen] Queued %s spawn at %s" % [effect, center])
+			return {"position": center, "gem": spawned_gem}
+	return {}
+
+func _get_special_effect_for_shape(shape: int) -> String:
+	match shape:
+		MatchResolver_.MatchShape.LINE_4:
+			if run_state.relic_ids.has("relic_rocket_workshop"):
+				return "rocket_v" if randf() > 0.5 else "rocket_h"
+		MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS:
+			if run_state.relic_ids.has("relic_bomb_workshop"):
+				return "bomb"
+		MatchResolver_.MatchShape.LINE_5:
+			if run_state.relic_ids.has("relic_prism_secret"):
+				return "beam"
+		MatchResolver_.MatchShape.BOX_4:
+			return "coin"
+	return ""
 
 func animate_clear(matches: Array) -> void:
 	var tween = create_tween().set_parallel(true)
@@ -441,10 +453,16 @@ func resolve_board(allow_refill: bool) -> void:
 			break
 
 		var matched_positions = []
+		var special_spawns: Array[Dictionary] = []
+		var reserved_spawn_positions: Dictionary = {}
 		for res in match_results:
-			matched_positions.append_array(res.positions)
 			if res.shape != MatchResolver_.MatchShape.LINE_3:
-				_trigger_special_action_for_shape(res)
+				var spawn = _create_special_spawn_for_shape(res)
+				if not spawn.is_empty() and not reserved_spawn_positions.has(spawn.position):
+					reserved_spawn_positions[spawn.position] = true
+					special_spawns.append(spawn)
+			for pos in res.positions:
+				matched_positions.append(pos)
 
 		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions)
 		
@@ -480,6 +498,13 @@ func resolve_board(allow_refill: bool) -> void:
 						stage_state.gold_earned += 1
 					deck_state.discard(gem)
 				board_state.set_gem(pos.x, pos.y, null)
+
+		for spawn in special_spawns:
+			var spawn_pos: Vector2i = spawn.position
+			var spawn_gem = spawn.gem
+			if board_state.get_gem(spawn_pos.x, spawn_pos.y) == null:
+				board_state.set_gem(spawn_pos.x, spawn_pos.y, spawn_gem)
+				_create_gem_view_at_position(spawn_pos, spawn_gem)
 		
 		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
@@ -570,3 +595,46 @@ func _board_position_for_spawn(spawn_cell: Vector2i) -> Vector2:
 func _on_board_view_resized() -> void:
 	if board_state != null:
 		update_all_views()
+
+func _get_special_spawn_position(positions: Array[Vector2i], shape: int) -> Vector2i:
+	if positions.is_empty():
+		return Vector2i.ZERO
+
+	var x_counts := {}
+	var y_counts := {}
+	for pos in positions:
+		x_counts[pos.x] = int(x_counts.get(pos.x, 0)) + 1
+		y_counts[pos.y] = int(y_counts.get(pos.y, 0)) + 1
+
+	match shape:
+		MatchResolver_.MatchShape.LINE_4, MatchResolver_.MatchShape.LINE_5:
+			var sorted_positions = positions.duplicate()
+			if y_counts.size() == 1:
+				sorted_positions.sort_custom(func(a: Vector2i, b: Vector2i): return a.x < b.x)
+			else:
+				sorted_positions.sort_custom(func(a: Vector2i, b: Vector2i): return a.y < b.y)
+			return sorted_positions[int(floor((sorted_positions.size() - 1) / 2.0))]
+		MatchResolver_.MatchShape.L_SHAPE, MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS:
+			var best_pos = positions[0]
+			var best_score = -1
+			for pos in positions:
+				var score = int(x_counts.get(pos.x, 0)) + int(y_counts.get(pos.y, 0))
+				if score > best_score:
+					best_score = score
+					best_pos = pos
+			return best_pos
+		_:
+			return positions[0]
+
+func _create_gem_view_at_position(pos: Vector2i, gem: Object) -> void:
+	if gem_views[pos.y][pos.x] != null:
+		gem_views[pos.y][pos.x].queue_free()
+
+	var gem_view = GEM_VIEW_SCENE.instantiate()
+	board_view.add_child(gem_view)
+	gem_view.board_pos = pos
+	gem_view.gem_clicked.connect(_on_gem_clicked)
+	gem_view.setup_gem(gem)
+	gem_view.size = Vector2(tile_size, tile_size)
+	gem_view.position = _board_position_for_cell(pos)
+	gem_views[pos.y][pos.x] = gem_view

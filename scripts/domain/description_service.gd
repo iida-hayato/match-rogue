@@ -6,6 +6,9 @@ static func get_relic_description(id: String) -> String:
 		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
 		"relic_shop": return "Member Card: 15% discount on all shop items."
 		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color. Box matches grant +1 Gold."
+		"relic_rocket_workshop": return "Rocket Workshop: 4 in a row creates a rocket gem."
+		"relic_bomb_workshop": return "Bomb Workshop: T and cross matches create a bomb gem."
+		"relic_prism_secret": return "Prism Secret: 5 in a row creates a diagonal beam gem."
 	return "No description available."
 
 static func get_gem_description(gem: Object) -> String:
