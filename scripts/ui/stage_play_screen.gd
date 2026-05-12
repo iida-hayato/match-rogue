@@ -1,6 +1,7 @@
 extends Control
 
 signal stage_finished(success: bool)
+signal view_deck_requested()
 
 @onready var stage_label: Label = $MarginContainer/VBox/HUD/StageLabel
 @onready var moves_label: Label = $MarginContainer/VBox/HUD/MovesLabel
@@ -14,6 +15,7 @@ signal stage_finished(success: bool)
 @onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/BoardView
 @onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+@onready var relics_container: GridContainer = $MarginContainer/VBox/MainLayout/RightPanel/RelicsContainer
 
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
@@ -45,6 +47,7 @@ var color_map = {
 func _ready() -> void:
 	set_process_input(true)
 	_setup_pause_overlay()
+	$MarginContainer/VBox/MainLayout/RightPanel/ViewDeckButton.pressed.connect(_on_view_deck_pressed)
 	# Standalone test
 	if get_tree().current_scene == self:
 		var mock_run = RunState.new()
@@ -115,6 +118,7 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	initial_refill()
 	update_hud()
 	update_deck_ui()
+	update_relics()
 	
 	if plan.stage_index == 0:
 		tutorial_label.visible = true
@@ -136,6 +140,29 @@ func update_hud() -> void:
 	
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
+
+func update_relics() -> void:
+	for child in relics_container.get_children():
+		child.queue_free()
+	
+	for relic_id in run_state.relic_ids:
+		var tex_rect = TextureRect.new()
+		tex_rect.custom_minimum_size = Vector2(48, 48)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.texture = GemTextureManager.get_relic_texture(relic_id)
+		
+		# Tooltip
+		tex_rect.tooltip_text = _get_relic_description(relic_id)
+		relics_container.add_child(tex_rect)
+
+func _get_relic_description(id: String) -> String:
+	match id:
+		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
+		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
+		"relic_shop": return "Member Card: 15% discount on all shop items."
+		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
+	return "No description available."
 
 func show_announcement(label: Label, text: String, sub_text: String = "") -> void:
 	label.text = text
@@ -238,7 +265,8 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	await animate_swap(p1, p2)
 	
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
-	var matches = MatchResolver.find_matches(board_state)
+	var include_boxes = run_state.relic_ids.has("relic_box_match")
+	var matches = MatchResolver.find_matches(board_state, include_boxes)
 	if matches.size() > 0:
 		stage_state.moves_remaining -= 1
 		update_hud()
@@ -312,34 +340,7 @@ func resolve_board() -> void:
 
 		# Identify effect positions (Rockets, Bombs, etc. - including those triggered above)
 		var effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions)
-...
-func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
-	var shape = match_res.shape
-	var positions = match_res.positions
-	var center = positions[0] # Simplification
-
-	print("[StagePlayScreen] Special Action for Shape: %s" % shape)
-
-	# Determine effect type
-	var effect = ""
-	match shape:
-		MatchResolver.MatchShape.LINE_4, MatchResolver.MatchShape.L_SHAPE:
-			effect = "rocket_v" if randf() > 0.5 else "rocket_h"
-		MatchResolver.MatchShape.T_SHAPE, MatchResolver.MatchShape.CROSS, MatchResolver.MatchShape.LINE_5:
-			effect = "bomb"
-		MatchResolver.MatchShape.BOX_4:
-			effect = "coin"
-
-	if effect != "":
-		# Apply immediate effect to the board at the "center" 
-		# (We can improve center detection later)
-		# For now, let's just mark the matched gems with these effects so they trigger
-		# during the same resolution step in find_effect_positions.
-		var gem = board_state.get_gem(center.x, center.y)
-		if gem:
-			gem.add_coat(effect)
-			print("[StagePlayScreen] Applied %s to gem at %s" % [effect, center])
-
+		
 		# All cleared positions (matches + effects)
 		var all_cleared_positions = matched_positions.duplicate()
 		for pos in effect_positions:
@@ -350,7 +351,9 @@ func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
 		var stone_breaks = MatchResolver.find_stone_breaks(board_state, all_cleared_positions)
 		
 		# Combined animation groups
-		var combined_clears = matches.duplicate()
+		var combined_clears = []
+		for res in match_results:
+			combined_clears.append(res.positions)
 		if effect_positions.size() > 0:
 			combined_clears.append(effect_positions)
 		if stone_breaks.size() > 0:
@@ -405,6 +408,29 @@ func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
 		update_all_views()
 	
 	check_game_end()
+
+func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
+	var shape = match_res.shape
+	var positions = match_res.positions
+	var center = positions[0] # Simplification
+
+	print("[StagePlayScreen] Special Action for Shape: %s" % shape)
+
+	# Determine effect type
+	var effect = ""
+	match shape:
+		MatchResolver.MatchShape.LINE_4, MatchResolver.MatchShape.L_SHAPE:
+			effect = "rocket_v" if randf() > 0.5 else "rocket_h"
+		MatchResolver.MatchShape.T_SHAPE, MatchResolver.MatchShape.CROSS, MatchResolver.MatchShape.LINE_5:
+			effect = "bomb"
+		MatchResolver.MatchShape.BOX_4:
+			effect = "coin"
+
+	if effect != "":
+		var gem = board_state.get_gem(center.x, center.y)
+		if gem:
+			gem.add_coat(effect)
+			print("[StagePlayScreen] Applied %s to gem at %s" % [effect, center])
 
 func animate_clear(matches: Array[Array]) -> void:
 	var tween = create_tween().set_parallel(true)
@@ -477,3 +503,6 @@ func check_game_end() -> void:
 		stage_finished.emit(true)
 	elif stage_state.is_game_over():
 		stage_finished.emit(false)
+
+func _on_view_deck_pressed() -> void:
+	view_deck_requested.emit()

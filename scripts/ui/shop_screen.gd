@@ -2,6 +2,7 @@ extends Control
 
 signal shop_finished()
 signal remove_gem_requested()
+signal view_deck_requested()
 
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
@@ -19,6 +20,7 @@ signal remove_gem_requested()
 # New service buttons
 var reroll_button: Button
 var remove_gem_button: Button
+var view_deck_button: Button
 
 var run_state
 var current_inventory: Array[Dictionary] = []
@@ -43,6 +45,13 @@ func _ready() -> void:
 	reroll_button.add_theme_font_size_override("font_size", 24)
 	reroll_button.pressed.connect(_on_reroll_pressed)
 	service_hbox.add_child(reroll_button)
+	
+	view_deck_button = Button.new()
+	view_deck_button.text = "View Deck"
+	view_deck_button.custom_minimum_size = Vector2(200, 60)
+	view_deck_button.add_theme_font_size_override("font_size", 24)
+	view_deck_button.pressed.connect(_on_view_deck_pressed)
+	service_hbox.add_child(view_deck_button)
 	
 	remove_gem_button = Button.new()
 	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
@@ -143,42 +152,31 @@ func update_ui(next_plan: Object) -> void:
 		
 		panel.tooltip_text = _get_item_description(item)
 		items_container.add_child(panel)
-
-func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_show_item_detail(item, price)
-
-func _show_item_detail(item: Dictionary, price: int) -> void:
-	detail_name.text = item.name
-	detail_desc.text = _get_item_description(item)
-	detail_price.text = "Cost: %dG" % price
 	
-	# Icon Setup
-	for child in detail_icon.get_children(): child.queue_free()
-	if item.type == "special_gem" or item.type == "coated_gem":
-		var effect_id = item.get("effect", item.get("coat", ""))
-		detail_icon.texture = GemTextureManager.get_gem_texture(item.color)
-		if effect_id != "":
-			var overlay = TextureRect.new()
-			overlay.texture = GemTextureManager.get_effect_texture(effect_id)
-			overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			detail_icon.add_child(overlay)
-	elif item.type == "relic":
-		detail_icon.texture = GemTextureManager.get_relic_texture(item.id)
-	else:
-		detail_icon.texture = null
-		
-	detail_buy_btn.disabled = run_state.gold < price
-	for connection in detail_buy_btn.pressed.get_connections():
-		detail_buy_btn.pressed.disconnect(connection.callable)
-		
-	detail_buy_btn.pressed.connect(func():
-		_on_buy_pressed(item, price)
-		detail_overlay.visible = false
-	)
+	update_relics()
+
+func update_relics() -> void:
+	var main_vbox = $MarginContainer/VBox
+	var relics_container = main_vbox.get_node_or_null("RelicsContainer")
+	if not relics_container:
+		relics_container = HBoxContainer.new()
+		relics_container.name = "RelicsContainer"
+		relics_container.alignment = BoxContainer.ALIGNMENT_CENTER
+		relics_container.add_theme_constant_override("separation", 15)
+		main_vbox.add_child(relics_container)
+		main_vbox.move_child(relics_container, 3) # After gold label
 	
-	detail_overlay.visible = true
+	for child in relics_container.get_children():
+		child.queue_free()
+		
+	for relic_id in run_state.relic_ids:
+		var tex_rect = TextureRect.new()
+		tex_rect.custom_minimum_size = Vector2(48, 48)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.texture = GemTextureManager.get_relic_texture(relic_id)
+		tex_rect.tooltip_text = _get_relic_description(relic_id)
+		relics_container.add_child(tex_rect)
 
 func _get_item_description(item: Dictionary) -> String:
 	match item.get("effect", item.get("coat", item.id)):
@@ -195,6 +193,14 @@ func _get_item_description(item: Dictionary) -> String:
 		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
 		"item_hammer": return "Hammer: Click a gem to clear it immediately."
 		"item_shuffle": return "Shuffle: Reshuffles the board state."
+	return "No description available."
+
+func _get_relic_description(id: String) -> String:
+	match id:
+		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
+		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
+		"relic_shop": return "Member Card: 15% discount on all shop items."
+		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
 	return "No description available."
 
 func _on_buy_pressed(item: Dictionary, price: int) -> void:
@@ -231,6 +237,9 @@ func _on_remove_gem_pressed() -> void:
 		remove_gem_requested.emit()
 		run_state.gold -= remove_gem_cost
 		remove_gem_cost += 2
+
+func _on_view_deck_pressed() -> void:
+	view_deck_requested.emit()
 
 func _on_next_button_pressed() -> void:
 	shop_finished.emit()

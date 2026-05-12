@@ -82,6 +82,7 @@ func load_stage(stage_index: int) -> void:
 
 	play_screen.initialize_stage(run_state, stage_deck, plan)
 	play_screen.stage_finished.connect(_on_stage_finished.bind(plan))
+	play_screen.view_deck_requested.connect(load_deck_edit_screen.bind("view", 0))
 
 
 func _on_stage_finished(success: bool, plan: Object) -> void:
@@ -155,6 +156,7 @@ func load_shop() -> void:
 	shop_screen.initialize_shop(run_state, next_plan, inventory)
 	shop_screen.shop_finished.connect(_on_shop_finished)
 	shop_screen.remove_gem_requested.connect(load_deck_edit_screen.bind("remove", 1))
+	shop_screen.view_deck_requested.connect(load_deck_edit_screen.bind("view", 0))
 
 
 func _on_shop_finished() -> void:
@@ -185,6 +187,13 @@ func load_deck_edit_screen(mode: String, count: int) -> void:
 	)
 	
 	edit_screen.cancelled.connect(func():
+		edit_screen.queue_free()
+		current_screen = previous_screen
+		if current_screen:
+			current_screen.visible = true
+	)
+	
+	edit_screen.closed.connect(func():
 		edit_screen.queue_free()
 		current_screen = previous_screen
 		if current_screen:
