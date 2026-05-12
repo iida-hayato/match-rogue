@@ -12,9 +12,11 @@ signal view_deck_requested()
 @onready var combo_score_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ComboLabel/ComboScoreLabel
 @onready var clear_count_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/ClearCountLabel
 @onready var tutorial_label: Label = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/AnnouncementLayer/TutorialLabel
+@onready var board_stack: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack
 @onready var board_view: Control = $MarginContainer/VBox/MainLayout/BoardArea/BoardStack/BoardView
 @onready var draw_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DrawPileLabel
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
+@onready var drop_button: Button = $MarginContainer/VBox/MainLayout/RightPanel/DropButton
 @onready var relics_container: GridContainer = $MarginContainer/VBox/MainLayout/RightPanel/RelicsContainer
 
 # Use load() instead of preload() for domain scripts to break potential cyclic dependencies
@@ -41,11 +43,12 @@ var is_animating = false
 const SWAP_DURATION = 0.15
 const CLEAR_DURATION = 0.2
 const FALL_DURATION = 0.2
-const TILE_SIZE_ESTIMATE = 64.0
 const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
+var tile_size: float = 64.0
+var board_origin: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	set_process_input(true)
@@ -55,6 +58,9 @@ func _ready() -> void:
 	var view_deck_btn = $MarginContainer/VBox/MainLayout/RightPanel/ViewDeckButton
 	if view_deck_btn:
 		view_deck_btn.pressed.connect(_on_view_deck_pressed)
+	if drop_button:
+		drop_button.pressed.connect(_on_drop_pressed)
+	board_view.resized.connect(_on_board_view_resized)
 	
 	# Standalone test
 	if get_tree().current_scene == self:
@@ -95,9 +101,10 @@ func _input(event: InputEvent) -> void:
 	
 	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
 		var mouse_pos = board_view.get_local_mouse_position()
+		var relative_pos = mouse_pos - board_origin
 		var grid_pos = Vector2i(
-			int(floor(mouse_pos.x / TILE_SIZE_ESTIMATE)),
-			int(floor(mouse_pos.y / TILE_SIZE_ESTIMATE))
+			int(floor(relative_pos.x / tile_size)),
+			int(floor(relative_pos.y / tile_size))
 		)
 		
 		if grid_pos != selected_pos and is_within_bounds(grid_pos.x, grid_pos.y):
@@ -109,13 +116,13 @@ func _input(event: InputEvent) -> void:
 				await try_swap(p1, p2)
 
 func is_within_bounds(x: int, y: int) -> bool:
-	return x >= 0 and x < 8 and y >= 0 and y < 8
+	return board_state != null and board_state.is_within_bounds(x, y)
 
 func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	print("[StagePlayScreen] Initializing Stage: %d (Target Score: %d)" % [plan.stage_index, plan.target_score])
 	run_state = run
 	deck_state = deck
-	board_state = BoardState_.new(8, 8)
+	board_state = BoardState_.new(run.board_width, run.board_height)
 	stage_state = StageState_.new()
 	stage_state.target_score = plan.target_score
 	stage_state.moves_remaining = plan.move_limit
@@ -125,6 +132,7 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	is_animating = false
 	
 	setup_board_views()
+	_refresh_board_layout()
 	initial_refill()
 	update_hud()
 	update_deck_ui()
@@ -147,6 +155,8 @@ func update_hud() -> void:
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
+	drop_button.text = "Drop: %d" % stage_state.drop_charges_remaining
+	drop_button.disabled = is_animating or stage_state.drop_charges_remaining <= 0
 	
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
@@ -195,11 +205,11 @@ func setup_board_views() -> void:
 		child.queue_free()
 	
 	gem_views = []
-	gem_views.resize(8)
-	for y in range(8):
+	gem_views.resize(board_state.height)
+	for y in range(board_state.height):
 		gem_views[y] = []
-		gem_views[y].resize(8)
-		for x in range(8):
+		gem_views[y].resize(board_state.width)
+		for x in range(board_state.width):
 			var gem_view = GEM_VIEW_SCENE.instantiate()
 			board_view.add_child(gem_view)
 			gem_view.board_pos = Vector2i(x, y)
@@ -234,8 +244,9 @@ func initial_refill() -> void:
 	update_deck_ui()
 
 func update_all_views() -> void:
-	for y in range(8):
-		for x in range(8):
+	_refresh_board_layout()
+	for y in range(board_state.height):
+		for x in range(board_state.width):
 			update_gem_view(x, y)
 
 func update_gem_view(x: int, y: int) -> void:
@@ -244,10 +255,12 @@ func update_gem_view(x: int, y: int) -> void:
 	if gem and view:
 		view.setup_gem(gem)
 		view.visible = true
-		view.position = Vector2(x * TILE_SIZE_ESTIMATE, y * TILE_SIZE_ESTIMATE)
+		view.size = Vector2(tile_size, tile_size)
+		view.position = _board_position_for_cell(Vector2i(x, y))
 		view.board_pos = Vector2i(x, y)
 	elif view:
 		view.visible = false
+		view.size = Vector2(tile_size, tile_size)
 
 func _on_gem_clicked(pos: Vector2i) -> void:
 	if is_animating or get_tree().paused: return
@@ -277,16 +290,13 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
 	var include_boxes = run_state.relic_ids.has("relic_box_match")
 	var matches = MatchResolver_.find_matches(board_state, include_boxes)
+	stage_state.moves_remaining -= 1
+	update_hud()
 	if matches.size() > 0:
-		stage_state.moves_remaining -= 1
-		update_hud()
-		await resolve_board()
-	else:
-		board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
-		await animate_swap(p1, p2)
-		update_all_views()
+		await resolve_board(false)
 	
 	is_animating = false
+	update_hud()
 
 func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var v1 = gem_views[p1.y][p1.x]
@@ -317,102 +327,12 @@ func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
 		label.add_theme_constant_override("outline_size", 6)
 		
 		board_view.add_child(label)
-		label.position = Vector2(pos.x * TILE_SIZE_ESTIMATE + 20, pos.y * TILE_SIZE_ESTIMATE)
+		label.position = _board_position_for_cell(pos) + Vector2(tile_size * 0.3, 0)
 		
 		var tween = create_tween().set_parallel(true)
 		tween.tween_property(label, "position:y", label.position.y - 60, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tween.tween_property(label, "modulate:a", 0.0, 0.8).set_delay(0.2)
 		tween.finished.connect(func(): label.queue_free())
-
-func resolve_board() -> void:
-	stage_state.chain_index = 0
-	var resolution_steps = 0
-
-	if tutorial_label.visible:
-		tutorial_label.visible = false
-
-	while true:
-		if stage_state.chain_index >= MAX_CHAIN_STEPS or resolution_steps >= MAX_RESOLUTION_STEPS:
-			print("[StagePlayScreen] Chain Overload triggered!")
-			break
-
-		var include_boxes = run_state.relic_ids.has("relic_box_match")
-		var match_results = MatchResolver_.find_matches(board_state, include_boxes)
-		if match_results.size() == 0:
-			break
-
-		var matched_positions = []
-		for res in match_results:
-			matched_positions.append_array(res.positions)
-			if res.shape != MatchResolver_.MatchShape.LINE_3:
-				_trigger_special_action_for_shape(res)
-
-		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions)
-		
-		var all_cleared_positions = matched_positions.duplicate()
-		for pos in effect_positions:
-			if not pos in all_cleared_positions:
-				all_cleared_positions.append(pos)
-				
-		var stone_breaks = MatchResolver_.find_stone_breaks(board_state, all_cleared_positions)
-		
-		# Ensure visually everything intended is included in combined_clears
-		var combined_clears = []
-		for res in match_results:
-			combined_clears.append(res.positions)
-		if effect_positions.size() > 0:
-			combined_clears.append(effect_positions)
-		if stone_breaks.size() > 0:
-			combined_clears.append(stone_breaks)
-			
-		await animate_clear(combined_clears)
-		
-		var cleared_gems = []
-		# We use all_cleared_positions PLUS stone_breaks to null out the board
-		var total_logical_clears = all_cleared_positions.duplicate()
-		for pos in stone_breaks:
-			if not pos in total_logical_clears:
-				total_logical_clears.append(pos)
-				
-		for pos in total_logical_clears:
-			var gem = board_state.get_gem(pos.x, pos.y)
-			if gem:
-				if not gem.is_stone():
-					cleared_gems.append(gem)
-					if gem.coat_ids.has("coin"):
-						stage_state.gold_earned += 1
-					deck_state.discard(gem)
-				board_state.set_gem(pos.x, pos.y, null)
-		
-		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
-		stage_state.score += score_result.delta
-		
-		run_state.total_score += score_result.delta
-		run_state.total_gems_cleared += cleared_gems.size()
-		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
-		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
-		
-		if cleared_gems.size() > 0:
-			_spawn_score_popups(all_cleared_positions, score_result.delta / max(1, all_cleared_positions.size()))
-		
-		if stage_state.chain_index > 0:
-			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result.delta)
-			
-		stage_state.chain_index += 1
-		resolution_steps += 1
-		
-		update_hud()
-		update_deck_ui()
-		
-		var movements = CascadeResolver_.apply_gravity(board_state)
-		await animate_movements(movements)
-		
-		var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
-		await animate_spawns(spawns)
-		
-		update_all_views()
-	
-	check_game_end()
 
 func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
 	var shape = match_res.shape
@@ -474,7 +394,7 @@ func animate_movements(movements: Array) -> void:
 			
 			var dist = abs(to.y - from.y)
 			var duration = FALL_DURATION + (dist * 0.05)
-			var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
+			var target_pos = _board_position_for_cell(to)
 			tween.tween_property(view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	await tween.finished
@@ -491,16 +411,107 @@ func animate_spawns(spawns: Array) -> void:
 		gem_view.board_pos = to
 		gem_view.gem_clicked.connect(_on_gem_clicked)
 		gem_view.setup_gem(spawn.gem)
+		gem_view.size = Vector2(tile_size, tile_size)
 		gem_views[to.y][to.x] = gem_view
 		
-		gem_view.position = Vector2(from.x * TILE_SIZE_ESTIMATE, from.y * TILE_SIZE_ESTIMATE)
+		gem_view.position = _board_position_for_spawn(from)
 		
 		var dist = abs(to.y - from.y)
 		var duration = FALL_DURATION + (dist * 0.05)
-		var target_pos = Vector2(to.x * TILE_SIZE_ESTIMATE, to.y * TILE_SIZE_ESTIMATE)
+		var target_pos = _board_position_for_cell(to)
 		tween.tween_property(gem_view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	await tween.finished
+
+func resolve_board(allow_refill: bool) -> void:
+	stage_state.chain_index = 0
+	var resolution_steps = 0
+
+	if tutorial_label.visible:
+		tutorial_label.visible = false
+
+	while true:
+		if stage_state.chain_index >= MAX_CHAIN_STEPS or resolution_steps >= MAX_RESOLUTION_STEPS:
+			print("[StagePlayScreen] Chain Overload triggered!")
+			break
+
+		var include_boxes = run_state.relic_ids.has("relic_box_match")
+		var match_results = MatchResolver_.find_matches(board_state, include_boxes)
+		if match_results.size() == 0:
+			break
+
+		var matched_positions = []
+		for res in match_results:
+			matched_positions.append_array(res.positions)
+			if res.shape != MatchResolver_.MatchShape.LINE_3:
+				_trigger_special_action_for_shape(res)
+
+		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions)
+		
+		var all_cleared_positions = matched_positions.duplicate()
+		for pos in effect_positions:
+			if not pos in all_cleared_positions:
+				all_cleared_positions.append(pos)
+				
+		var stone_breaks = MatchResolver_.find_stone_breaks(board_state, all_cleared_positions)
+		
+		var combined_clears = []
+		for res in match_results:
+			combined_clears.append(res.positions)
+		if effect_positions.size() > 0:
+			combined_clears.append(effect_positions)
+		if stone_breaks.size() > 0:
+			combined_clears.append(stone_breaks)
+			
+		await animate_clear(combined_clears)
+		
+		var cleared_gems = []
+		var total_logical_clears = all_cleared_positions.duplicate()
+		for pos in stone_breaks:
+			if not pos in total_logical_clears:
+				total_logical_clears.append(pos)
+				
+		for pos in total_logical_clears:
+			var gem = board_state.get_gem(pos.x, pos.y)
+			if gem:
+				if not gem.is_stone():
+					cleared_gems.append(gem)
+					if gem.coat_ids.has("coin"):
+						stage_state.gold_earned += 1
+					deck_state.discard(gem)
+				board_state.set_gem(pos.x, pos.y, null)
+		
+		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
+		stage_state.score += score_result.delta
+		
+		run_state.total_score += score_result.delta
+		run_state.total_gems_cleared += cleared_gems.size()
+		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
+		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
+		
+		if cleared_gems.size() > 0:
+			_spawn_score_popups(all_cleared_positions, score_result.delta / max(1, all_cleared_positions.size()))
+		
+		if stage_state.chain_index > 0:
+			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result.delta)
+			
+		stage_state.chain_index += 1
+		resolution_steps += 1
+		
+		update_hud()
+		update_deck_ui()
+		
+		var movements = CascadeResolver_.apply_gravity(board_state)
+		await animate_movements(movements)
+		update_all_views()
+		
+		if allow_refill:
+			var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+			await animate_spawns(spawns)
+			
+			update_all_views()
+
+	check_game_end()
 
 func check_game_end() -> void:
 	if stage_state.is_cleared():
@@ -510,3 +521,52 @@ func check_game_end() -> void:
 
 func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
+
+func _on_drop_pressed() -> void:
+	if is_animating or get_tree().paused or stage_state.drop_charges_remaining <= 0:
+		return
+	if not board_state.has_empty_cells():
+		return
+
+	if selected_pos != null and gem_views[selected_pos.y][selected_pos.x]:
+		gem_views[selected_pos.y][selected_pos.x].set_highlight(false)
+	selected_pos = null
+	is_animating = true
+	stage_state.drop_charges_remaining -= 1
+	update_hud()
+
+	var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+	await animate_spawns(spawns)
+
+	update_all_views()
+	await resolve_board(false)
+
+	is_animating = false
+	update_hud()
+
+func _refresh_board_layout() -> void:
+	if board_state == null:
+		return
+
+	var available_size = board_view.size
+	if available_size.x <= 0.0 or available_size.y <= 0.0:
+		available_size = board_stack.custom_minimum_size
+
+	tile_size = floor(min(
+		available_size.x / max(1, board_state.width),
+		available_size.y / max(1, board_state.height)
+	))
+	tile_size = max(16.0, tile_size)
+
+	var board_pixel_size = Vector2(board_state.width * tile_size, board_state.height * tile_size)
+	board_origin = (available_size - board_pixel_size) * 0.5
+
+func _board_position_for_cell(cell: Vector2i) -> Vector2:
+	return board_origin + Vector2(cell.x * tile_size, cell.y * tile_size)
+
+func _board_position_for_spawn(spawn_cell: Vector2i) -> Vector2:
+	return board_origin + Vector2(spawn_cell.x * tile_size, spawn_cell.y * tile_size)
+
+func _on_board_view_resized() -> void:
+	if board_state != null:
+		update_all_views()

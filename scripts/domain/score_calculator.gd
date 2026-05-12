@@ -11,17 +11,13 @@ static func calculate_score(cleared_gems: Array, chain_index: int, relic_ids: Ar
 		total_base_value += 10
 		matching_gem_count += 1
 	
-	var count_mult_step = 0.5
+	var count_multiplier = _get_clear_count_multiplier(matching_gem_count)
 	if relic_ids.has("relic_mining") and matching_gem_count >= 6:
-		count_mult_step += 0.3 # Large Excavation Emblem
-		
-	var count_multiplier = 1.0 + (max(0, matching_gem_count - 3) * count_mult_step)
+		count_multiplier += 0.3 # Large Excavation Emblem
 	
-	var chain_mult_step = 0.2
+	var chain_multiplier = _get_chain_multiplier(chain_index)
 	if relic_ids.has("relic_chain"):
-		chain_mult_step += 0.05 # Chain Gear
-		
-	var chain_multiplier = 1.0 + (chain_index * chain_mult_step)
+		chain_multiplier += chain_index * 0.05 # Chain Gear
 	
 	var final_score = int(total_base_value * count_multiplier * chain_multiplier)
 	
@@ -31,3 +27,35 @@ static func calculate_score(cleared_gems: Array, chain_index: int, relic_ids: Ar
 		"count_multiplier": count_multiplier,
 		"chain_multiplier": chain_multiplier
 	}
+
+static func _get_clear_count_multiplier(clear_count: int) -> float:
+	match clear_count:
+		0, 1, 2, 3:
+			return 1.0
+		4:
+			return 1.10
+		5:
+			return 1.25
+		6:
+			return 1.45
+		7:
+			return 1.70
+		8:
+			return 2.0
+		_:
+			return 2.0 + (max(0, clear_count - 8) * 0.10)
+
+static func _get_chain_multiplier(chain_index: int) -> float:
+	match chain_index:
+		0:
+			return 1.0
+		1:
+			return 1.10
+		2:
+			return 1.20
+		3:
+			return 1.35
+		4:
+			return 1.50
+		_:
+			return 1.50 + (max(0, chain_index - 4) * 0.15)

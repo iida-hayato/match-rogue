@@ -147,7 +147,7 @@ func load_shop() -> void:
 		current_screen.queue_free()
 	
 	var next_plan = StageMaster_.create_plan(run_state.stage_index)
-	var inventory = ShopGenerator_.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
+	var inventory = ShopGenerator_.generate_shop_inventory(run_state)
 	
 	var shop_screen_scene = load("res://scenes/screens/shop_screen.tscn")
 	var shop_screen = shop_screen_scene.instantiate()
@@ -157,7 +157,6 @@ func load_shop() -> void:
 	
 	shop_screen.initialize_shop(run_state, next_plan, inventory)
 	shop_screen.shop_finished.connect(_on_shop_finished)
-	shop_screen.remove_gem_requested.connect(load_deck_edit_screen.bind("remove", 1))
 	shop_screen.view_deck_requested.connect(load_deck_edit_screen.bind("view", 0))
 
 func _on_shop_finished() -> void:

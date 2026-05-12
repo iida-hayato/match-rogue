@@ -1,7 +1,6 @@
 extends Control
 
 signal shop_finished()
-signal remove_gem_requested()
 signal view_deck_requested()
 
 const RunState_ = preload("res://scripts/domain/run_state.gd")
@@ -14,7 +13,7 @@ const DescriptionService_ = preload("res://scripts/domain/description_service.gd
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
 @onready var next_button: Button = $MarginContainer/VBox/NextButton
-@onready var items_container: HBoxContainer = $MarginContainer/VBox/ItemsContainer
+@onready var items_container: GridContainer = $MarginContainer/VBox/ItemsContainer
 
 @onready var detail_overlay: ColorRect = $ItemDetailOverlay
 @onready var detail_name: Label = $ItemDetailOverlay/Panel/VBox/NameLabel
@@ -26,13 +25,12 @@ const DescriptionService_ = preload("res://scripts/domain/description_service.gd
 
 # New service buttons
 var reroll_button: Button
-var remove_gem_button: Button
 var view_deck_button: Button
 
 var run_state
+var next_stage_plan
 var current_inventory: Array[Dictionary] = []
 var reroll_cost: int = 3
-var remove_gem_cost: int = 8
 
 func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
@@ -42,39 +40,33 @@ func _ready() -> void:
 	var main_vbox = $MarginContainer/VBox
 	var service_hbox = HBoxContainer.new()
 	service_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	service_hbox.add_theme_constant_override("separation", 40)
+	service_hbox.add_theme_constant_override("separation", 16)
 	main_vbox.add_child(service_hbox)
 	main_vbox.move_child(service_hbox, 4) # Insert before next stage info
 	
 	reroll_button = Button.new()
 	reroll_button.text = "Reroll: %dG" % reroll_cost
-	reroll_button.custom_minimum_size = Vector2(200, 60)
-	reroll_button.add_theme_font_size_override("font_size", 24)
+	reroll_button.custom_minimum_size = Vector2(170, 48)
+	reroll_button.add_theme_font_size_override("font_size", 20)
 	reroll_button.pressed.connect(_on_reroll_pressed)
 	service_hbox.add_child(reroll_button)
 	
 	view_deck_button = Button.new()
 	view_deck_button.text = "View Deck"
-	view_deck_button.custom_minimum_size = Vector2(200, 60)
-	view_deck_button.add_theme_font_size_override("font_size", 24)
+	view_deck_button.custom_minimum_size = Vector2(170, 48)
+	view_deck_button.add_theme_font_size_override("font_size", 20)
 	view_deck_button.pressed.connect(_on_view_deck_pressed)
 	service_hbox.add_child(view_deck_button)
-	
-	remove_gem_button = Button.new()
-	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
-	remove_gem_button.custom_minimum_size = Vector2(250, 60)
-	remove_gem_button.add_theme_font_size_override("font_size", 24)
-	remove_gem_button.pressed.connect(_on_remove_gem_pressed)
-	service_hbox.add_child(remove_gem_button)
 
 	if get_tree().current_scene == self:
 		var mock_run = RunState_.new()
 		var mock_plan = StageMaster_.create_plan(1)
-		var mock_inv = ShopGenerator_.generate_shop_inventory(1, mock_run.relic_ids)
+		var mock_inv = ShopGenerator_.generate_shop_inventory(mock_run)
 		initialize_shop(mock_run, mock_plan, mock_inv)
 
 func initialize_shop(run: Object, next_plan: Object, inventory: Array[Dictionary]) -> void:
 	run_state = run
+	next_stage_plan = next_plan
 	current_inventory = inventory
 	update_ui(next_plan)
 
@@ -94,9 +86,6 @@ func update_ui(next_plan: Object) -> void:
 	reroll_button.text = "Reroll: %dG" % reroll_cost
 	reroll_button.disabled = run_state.gold < reroll_cost
 	
-	remove_gem_button.text = "Remove Gem: %dG" % remove_gem_cost
-	remove_gem_button.disabled = run_state.gold < remove_gem_cost or run_state.master_deck.size() <= 0
-	
 	# Clear and rebuild inventory
 	for child in items_container.get_children():
 		child.queue_free()
@@ -109,21 +98,21 @@ func update_ui(next_plan: Object) -> void:
 		var panel = PanelContainer.new()
 		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		panel.gui_input.connect(_on_item_panel_input.bind(item, price))
-		panel.custom_minimum_size = Vector2(200, 260)
+		panel.custom_minimum_size = Vector2(176, 188)
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 5)
+		vbox.add_theme_constant_override("separation", 4)
 		panel.add_child(vbox)
 		
 		# Item Texture
 		var tex_rect = TextureRect.new()
-		tex_rect.custom_minimum_size = Vector2(60, 60)
+		tex_rect.custom_minimum_size = Vector2(48, 48)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		vbox.add_child(tex_rect)
-		
+	
 		# Set texture
-		if item.type == "special_gem" or item.type == "coated_gem":
+		if item.type == "special_gem" or item.type == "coated_gem" or item.type == "board_upgrade":
 			var effect_id = item.get("effect", item.get("coat", ""))
 			tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
 			if effect_id != "":
@@ -138,22 +127,22 @@ func update_ui(next_plan: Object) -> void:
 		var name_label = Label.new()
 		name_label.text = item.name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 22)
+		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(name_label)
 		
 		var price_label = Label.new()
-		price_label.text = "%dG" % price
+		price_label.text = "MAX" if item.get("maxed", false) else "%dG" % price
 		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price_label.add_theme_font_size_override("font_size", 28)
-		price_label.add_theme_color_override("font_color", Color.YELLOW)
+		price_label.add_theme_font_size_override("font_size", 22)
+		price_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8) if item.get("maxed", false) else Color.YELLOW)
 		vbox.add_child(price_label)
 		
 		var buy_btn = Button.new()
 		buy_btn.text = "BUY"
-		buy_btn.custom_minimum_size = Vector2(0, 50)
-		buy_btn.add_theme_font_size_override("font_size", 20)
-		buy_btn.disabled = run_state.gold < price
+		buy_btn.custom_minimum_size = Vector2(0, 40)
+		buy_btn.add_theme_font_size_override("font_size", 17)
+		buy_btn.disabled = item.get("maxed", false) or run_state.gold < price
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)
 		
@@ -192,11 +181,11 @@ func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> vo
 func _show_item_detail(item: Dictionary, price: int) -> void:
 	detail_name.text = item.name
 	detail_desc.text = DescriptionService_.get_item_description(item)
-	detail_price.text = "Cost: %dG" % price
+	detail_price.text = "MAX" if item.get("maxed", false) else "Cost: %dG" % price
 	
 	# Icon Setup
 	for child in detail_icon.get_children(): child.queue_free()
-	if item.type == "special_gem" or item.type == "coated_gem":
+	if item.type == "special_gem" or item.type == "coated_gem" or item.type == "board_upgrade":
 		var effect_id = item.get("effect", item.get("coat", ""))
 		detail_icon.texture = GemTextureManager_.get_gem_texture(item.color)
 		if effect_id != "":
@@ -210,7 +199,7 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 	else:
 		detail_icon.texture = null
 		
-	detail_buy_btn.disabled = run_state.gold < price
+	detail_buy_btn.disabled = item.get("maxed", false) or run_state.gold < price
 	for connection in detail_buy_btn.pressed.get_connections():
 		detail_buy_btn.pressed.disconnect(connection.callable)
 		
@@ -222,11 +211,16 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 	detail_overlay.visible = true
 
 func _on_buy_pressed(item: Dictionary, price: int) -> void:
+	if item.get("maxed", false):
+		return
 	if run_state.gold >= price:
 		run_state.gold -= price
 		apply_purchase(item)
-		current_inventory.erase(item)
-		update_ui(StageMaster_.create_plan(run_state.stage_index))
+		if item.type == "board_upgrade":
+			_refresh_persistent_inventory()
+		else:
+			current_inventory.erase(item)
+		update_ui(next_stage_plan)
 
 func apply_purchase(item: Dictionary) -> void:
 	match item.type:
@@ -240,24 +234,30 @@ func apply_purchase(item: Dictionary) -> void:
 			var gem = GemInstance_.new(item.color)
 			gem.add_coat(item.coat)
 			run_state.master_deck.append(gem)
+		"board_upgrade":
+			if item.axis == "height":
+				run_state.expand_height()
+			else:
+				run_state.expand_width()
 		"consumable":
 			print("Purchased item: %s" % item.id)
 
 func _on_reroll_pressed() -> void:
 	if run_state.gold >= reroll_cost:
 		run_state.gold -= reroll_cost
-		current_inventory = ShopGenerator_.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
+		current_inventory = ShopGenerator_.generate_shop_inventory(run_state)
 		reroll_cost += 1
-		update_ui(StageMaster_.create_plan(run_state.stage_index))
-
-func _on_remove_gem_pressed() -> void:
-	if run_state.gold >= remove_gem_cost:
-		remove_gem_requested.emit()
-		run_state.gold -= remove_gem_cost
-		remove_gem_cost += 2
+		update_ui(next_stage_plan)
 
 func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
 
 func _on_next_button_pressed() -> void:
 	shop_finished.emit()
+
+func _refresh_persistent_inventory() -> void:
+	var updated_inventory := ShopGenerator_.get_persistent_shop_items(run_state)
+	for item in current_inventory:
+		if item.type != "board_upgrade":
+			updated_inventory.append(item)
+	current_inventory = updated_inventory

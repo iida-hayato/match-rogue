@@ -1,14 +1,14 @@
 extends RefCounted
 
-static func generate_shop_inventory(_stage_index: int, owned_relics: Array[String] = []) -> Array[Dictionary]:
-	var inventory: Array[Dictionary] = []
+static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
+	var inventory := get_persistent_shop_items(run_state)
 	
 	# 特殊Gem x2
 	inventory.append(generate_special_gem())
 	inventory.append(generate_special_gem())
 	
 	# レリック x1 (取得済みは除外)
-	var relic = generate_relic(owned_relics)
+	var relic = generate_relic(run_state.relic_ids)
 	if relic:
 		inventory.append(relic)
 	else:
@@ -22,6 +22,54 @@ static func generate_shop_inventory(_stage_index: int, owned_relics: Array[Strin
 		inventory.append(generate_consumable())
 		
 	return inventory
+
+static func get_persistent_shop_items(run_state: Object) -> Array[Dictionary]:
+	return [
+		_create_board_upgrade_item(
+			"expand_height",
+			"Add Row",
+			"height",
+			"yellow",
+			"rocket_v",
+			run_state.board_height,
+			run_state.get_base_board_height(),
+			run_state.get_max_board_height()
+		),
+		_create_board_upgrade_item(
+			"expand_width",
+			"Add Column",
+			"width",
+			"green",
+			"rocket_h",
+			run_state.board_width,
+			run_state.get_base_board_width(),
+			run_state.get_max_board_width()
+		)
+	]
+
+static func _create_board_upgrade_item(
+	id: String,
+	name: String,
+	axis: String,
+	color: String,
+	effect: String,
+	current_size: int,
+	base_size: int,
+	max_size: int
+) -> Dictionary:
+	var purchased_count = current_size - base_size
+	return {
+		"id": id,
+		"name": "%s (%d/%d)" % [name, current_size, max_size],
+		"type": "board_upgrade",
+		"axis": axis,
+		"color": color,
+		"effect": effect,
+		"price": 12 + (purchased_count * 6),
+		"current_size": current_size,
+		"max_size": max_size,
+		"maxed": current_size >= max_size
+	}
 
 static func generate_special_gem() -> Dictionary:
 	var items = [

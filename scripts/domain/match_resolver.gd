@@ -1,5 +1,8 @@
 extends RefCounted
 
+const LINE_EFFECT_RANGE := 3
+const DIAGONAL_EFFECT_RANGE := 3
+
 enum MatchShape {
 	NONE,
 	LINE_3,
@@ -215,15 +218,17 @@ static func find_effect_positions(board: Object, cleared_positions: Array) -> Ar
 			var pattern = []
 			match effect:
 				"rocket_v":
-					for y in range(board.height): pattern.append(Vector2i(pos.x, y))
+					for dy in range(-LINE_EFFECT_RANGE, LINE_EFFECT_RANGE + 1):
+						pattern.append(Vector2i(pos.x, pos.y + dy))
 				"rocket_h":
-					for x in range(board.width): pattern.append(Vector2i(x, pos.y))
+					for dx in range(-LINE_EFFECT_RANGE, LINE_EFFECT_RANGE + 1):
+						pattern.append(Vector2i(pos.x + dx, pos.y))
 				"bomb":
 					for dy in range(-1, 2):
 						for dx in range(-1, 2):
 							pattern.append(Vector2i(pos.x + dx, pos.y + dy))
 				"beam":
-					for i in range(-max(board.width, board.height), max(board.width, board.height)):
+					for i in range(-DIAGONAL_EFFECT_RANGE, DIAGONAL_EFFECT_RANGE + 1):
 						pattern.append(Vector2i(pos.x + i, pos.y + i))
 						pattern.append(Vector2i(pos.x + i, pos.y - i))
 			

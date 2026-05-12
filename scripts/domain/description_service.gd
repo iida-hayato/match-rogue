@@ -20,10 +20,10 @@ static func get_gem_description(gem: Object) -> String:
 
 static func get_coat_description(id: String) -> String:
 	match id:
-		"rocket_v": return "Vertical Rocket (Clears column)"
-		"rocket_h": return "Horizontal Rocket (Clears row)"
+		"rocket_v": return "Vertical Rocket (Clears up to 3 tiles vertically)"
+		"rocket_h": return "Horizontal Rocket (Clears up to 3 tiles horizontally)"
 		"bomb": return "Bomb (Clears 3x3 area)"
-		"beam": return "Diagonal Beam (Clears X-shape)"
+		"beam": return "Diagonal Beam (Clears diagonals up to 3 tiles)"
 		"coin": return "Gold Coin (+1 Gold)"
 		"gold": return "Gold Coin (+1 Gold)"
 		"score": return "Shiny Polish (Huge score bonus)"
@@ -32,6 +32,15 @@ static func get_coat_description(id: String) -> String:
 static func get_item_description(item: Dictionary) -> String:
 	if item.type == "relic":
 		return get_relic_description(item.id)
+	if item.type == "board_upgrade":
+		var axis_label = "rows" if item.axis == "height" else "columns"
+		var max_state = " Maxed out." if item.get("maxed", false) else ""
+		return "Permanently add 1 %s to the board. Current: %d / %d.%s" % [
+			axis_label,
+			item.get("current_size", 0),
+			item.get("max_size", 0),
+			max_state
+		]
 	
 	var effect_id = item.get("effect", item.get("coat", ""))
 	if effect_id != "":

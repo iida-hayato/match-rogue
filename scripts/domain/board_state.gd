@@ -30,3 +30,10 @@ func swap_gems(x1: int, y1: int, x2: int, y2: int) -> void:
 	var temp = cells[y1][x1]
 	cells[y1][x1] = cells[y2][x2]
 	cells[y2][x2] = temp
+
+func has_empty_cells() -> bool:
+	for y in range(height):
+		for x in range(width):
+			if cells[y][x] == null:
+				return true
+	return false

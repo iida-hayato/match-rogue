@@ -205,12 +205,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "View Deck"
 
-[node name="ShuffleButton" type="Button" parent="MarginContainer/VBox/MainLayout/RightPanel"]
-visible = false
+[node name="DropButton" type="Button" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Shuffle"
+text = "Drop: 4"
 
 [node name="RelicsLabel" type="Label" parent="MarginContainer/VBox/MainLayout/RightPanel"]
 layout_mode = 2
