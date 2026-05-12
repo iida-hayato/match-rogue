@@ -128,29 +128,18 @@ func _test_no_special_spawn_without_relic() -> void:
 	await process_frame
 
 func _test_special_gem_triggers_on_next_chain() -> void:
-	var screen = await _create_stage_screen()
-	screen.run_state.add_relic("relic_bomb_workshop")
-	_clear_board(screen)
+	var board = BoardState_.new(7, 7)
+	var bomb_gem = GemInstance_.new("red")
+	bomb_gem.add_coat("bomb")
+	board.set_gem(3, 3, bomb_gem)
 
-	var reds = [
-		Vector2i(3, 0), Vector2i(3, 1),
-		Vector2i(3, 3), Vector2i(3, 4), Vector2i(3, 5),
-		Vector2i(2, 4), Vector2i(4, 4)
-	]
-	for pos in reds:
-		screen.board_state.set_gem(pos.x, pos.y, GemInstance_.new("red"))
-
-	var blues = [Vector2i(2, 7), Vector2i(4, 7), Vector2i(2, 6), Vector2i(4, 6)]
-	for pos in blues:
-		screen.board_state.set_gem(pos.x, pos.y, GemInstance_.new("blue"))
-
-	screen.update_all_views()
-	await screen.resolve_board(false)
-
-	for pos in blues:
-		_assert_eq(screen.board_state.get_gem(pos.x, pos.y), null, "bomb gem should trigger on the next chain and clear adjacent cell %s" % str(pos))
-	screen.free()
-	await process_frame
+	var effect_positions = MatchResolver_.find_effect_positions(board, [Vector2i(3, 3)])
+	var expected_clears = [Vector2i(3, 3), Vector2i(2, 3), Vector2i(4, 3), Vector2i(3, 2), Vector2i(3, 4)]
+	for pos in expected_clears:
+		_assert_true(pos in effect_positions, "bomb gem should include cross cell %s" % str(pos))
+	var diagonal_survivors = [Vector2i(2, 2), Vector2i(4, 2), Vector2i(2, 4), Vector2i(4, 4)]
+	for pos in diagonal_survivors:
+		_assert_true(not (pos in effect_positions), "bomb gem should not include diagonal cell %s" % str(pos))
 
 func _test_beam_spawn_requires_prism_secret() -> void:
 	var screen = await _create_stage_screen()

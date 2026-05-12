@@ -1,7 +1,7 @@
 extends RefCounted
 
 const LINE_EFFECT_RANGE := 3
-const DIAGONAL_EFFECT_RANGE := 3
+const DIAGONAL_EFFECT_RANGE := 2
 
 enum MatchShape {
 	NONE,
@@ -239,9 +239,11 @@ static func find_effect_positions(board: Object, cleared_positions: Array) -> Ar
 					for dx in range(-LINE_EFFECT_RANGE, LINE_EFFECT_RANGE + 1):
 						pattern.append(Vector2i(pos.x + dx, pos.y))
 				"bomb":
-					for dy in range(-1, 2):
-						for dx in range(-1, 2):
-							pattern.append(Vector2i(pos.x + dx, pos.y + dy))
+					pattern.append(pos)
+					pattern.append(Vector2i(pos.x - 1, pos.y))
+					pattern.append(Vector2i(pos.x + 1, pos.y))
+					pattern.append(Vector2i(pos.x, pos.y - 1))
+					pattern.append(Vector2i(pos.x, pos.y + 1))
 				"beam":
 					for i in range(-DIAGONAL_EFFECT_RANGE, DIAGONAL_EFFECT_RANGE + 1):
 						pattern.append(Vector2i(pos.x + i, pos.y + i))
