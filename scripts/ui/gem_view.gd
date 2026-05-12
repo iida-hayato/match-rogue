@@ -3,6 +3,7 @@ extends TextureRect
 signal gem_clicked(pos: Vector2i)
 
 const GemTextureManager = preload("res://scripts/ui/gem_texture_manager.gd")
+const DescriptionService = preload("res://scripts/domain/description_service.gd")
 
 @onready var effect_overlay: TextureRect = $EffectOverlay
 
@@ -14,7 +15,7 @@ func setup_gem(gem: Object) -> void:
 	texture = GemTextureManager.get_gem_texture(gem.definition_id)
 	
 	# Tooltip
-	tooltip_text = _get_gem_description(gem)
+	tooltip_text = DescriptionService.get_gem_description(gem)
 	
 	# Effect overlay
 	effect_overlay.texture = null
@@ -23,20 +24,6 @@ func setup_gem(gem: Object) -> void:
 		if tex:
 			effect_overlay.texture = tex
 			break
-
-func _get_gem_description(gem: Object) -> String:
-	var desc = "Color: %s" % gem.definition_id.capitalize()
-	if gem.is_stone():
-		return "Stone Gem: Does not match. Breaks when nearby gems are cleared."
-	
-	for coat in gem.coat_ids:
-		match coat:
-			"rocket_v": desc += "\nEffect: Vertical Rocket"
-			"rocket_h": desc += "\nEffect: Horizontal Rocket"
-			"bomb": desc += "\nEffect: Bomb"
-			"beam": desc += "\nEffect: Diagonal Beam"
-			"coin": desc += "\nEffect: Gold Coin (+1G)"
-	return desc
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:

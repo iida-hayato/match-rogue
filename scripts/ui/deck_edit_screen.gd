@@ -12,6 +12,7 @@ signal closed()
 @onready var cancel_button: Button = $MarginContainer/VBox/Buttons/CancelButton
 
 const GemTextureManager_ = preload("res://scripts/ui/gem_texture_manager.gd")
+const DescriptionService_ = preload("res://scripts/domain/description_service.gd")
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
 var mode: String = "remove" # "remove", "select", "view"
@@ -112,16 +113,8 @@ func _refresh_relics() -> void:
 		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tex.texture = GemTextureManager_.get_relic_texture(rid)
-		tex.tooltip_text = _get_relic_description(rid)
+		tex.tooltip_text = DescriptionService_.get_relic_description(rid)
 		container.add_child(tex)
-
-func _get_relic_description(id: String) -> String:
-	match id:
-		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
-		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
-		"relic_shop": return "Member Card: 15% discount on all shop items."
-		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
-	return "No description available."
 
 func _on_gem_gui_input(event: InputEvent, index: int, _view: Control) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:

@@ -9,6 +9,7 @@ const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
 const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
 const GemTextureManager_ = preload("res://scripts/ui/gem_texture_manager.gd")
 const ShopGenerator_ = preload("res://scripts/domain/shop_generator.gd")
+const DescriptionService_ = preload("res://scripts/domain/description_service.gd")
 
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
@@ -156,7 +157,7 @@ func update_ui(next_plan: Object) -> void:
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)
 		
-		panel.tooltip_text = _get_item_description(item)
+		panel.tooltip_text = DescriptionService_.get_item_description(item)
 		items_container.add_child(panel)
 	
 	update_relics()
@@ -181,7 +182,7 @@ func update_relics() -> void:
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tex_rect.texture = GemTextureManager_.get_relic_texture(relic_id)
-		tex_rect.tooltip_text = _get_relic_description(relic_id)
+		tex_rect.tooltip_text = DescriptionService_.get_relic_description(relic_id)
 		relics_container.add_child(tex_rect)
 
 func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> void:
@@ -190,7 +191,7 @@ func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> vo
 
 func _show_item_detail(item: Dictionary, price: int) -> void:
 	detail_name.text = item.name
-	detail_desc.text = _get_item_description(item)
+	detail_desc.text = DescriptionService_.get_item_description(item)
 	detail_price.text = "Cost: %dG" % price
 	
 	# Icon Setup
@@ -219,31 +220,6 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 	)
 	
 	detail_overlay.visible = true
-
-func _get_item_description(item: Dictionary) -> String:
-	match item.get("effect", item.get("coat", item.id)):
-		"rocket_v": return "Clears vertical column when matched."
-		"rocket_h": return "Clears horizontal row when matched."
-		"bomb": return "Clears surrounding 3x3 area when matched."
-		"beam": return "Clears diagonal X-shape when matched."
-		"coin": return "Earn +1 Gold when matched."
-		"gold": return "Earn +1 Gold when matched."
-		"score": return "Grants significant score bonus."
-		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
-		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
-		"relic_shop": return "Member Card: 15% discount on all shop items."
-		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
-		"item_hammer": return "Hammer: Click a gem to clear it immediately."
-		"item_shuffle": return "Shuffle: Reshuffles the board state."
-	return "No description available."
-
-func _get_relic_description(id: String) -> String:
-	match id:
-		"relic_mining": return "Mining Emblem: Clear 6+ gems to get huge bonus multipliers."
-		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
-		"relic_shop": return "Member Card: 15% discount on all shop items."
-		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color."
-	return "No description available."
 
 func _on_buy_pressed(item: Dictionary, price: int) -> void:
 	if run_state.gold >= price:

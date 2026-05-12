@@ -1,0 +1,44 @@
+extends RefCounted
+
+static func get_relic_description(id: String) -> String:
+	match id:
+		"relic_mining": return "Mining Emblem: Clear 6+ gems at once to get huge bonus multipliers."
+		"relic_chain": return "Chain Gear: Increases chain multiplier bonus per step."
+		"relic_shop": return "Member Card: 15% discount on all shop items."
+		"relic_box_match": return "Magic Box: Allows matching 2x2 squares of the same color. Box matches grant +1 Gold."
+	return "No description available."
+
+static func get_gem_description(gem: Object) -> String:
+	# Expects GemInstance-like object with definition_id and coat_ids
+	var desc = "Color: %s" % gem.definition_id.capitalize()
+	if gem.has_method("is_stone") and gem.is_stone():
+		return "Stone Gem: Does not match. Breaks when nearby gems are cleared."
+	
+	for coat in gem.coat_ids:
+		desc += "\nEffect: " + get_coat_description(coat)
+	return desc
+
+static func get_coat_description(id: String) -> String:
+	match id:
+		"rocket_v": return "Vertical Rocket (Clears column)"
+		"rocket_h": return "Horizontal Rocket (Clears row)"
+		"bomb": return "Bomb (Clears 3x3 area)"
+		"beam": return "Diagonal Beam (Clears X-shape)"
+		"coin": return "Gold Coin (+1 Gold)"
+		"gold": return "Gold Coin (+1 Gold)"
+		"score": return "Shiny Polish (Huge score bonus)"
+	return id.capitalize()
+
+static func get_item_description(item: Dictionary) -> String:
+	if item.type == "relic":
+		return get_relic_description(item.id)
+	
+	var effect_id = item.get("effect", item.get("coat", ""))
+	if effect_id != "":
+		return get_coat_description(effect_id)
+		
+	match item.id:
+		"item_hammer": return "Hammer: Click a gem to clear it immediately."
+		"item_shuffle": return "Shuffle: Reshuffles the board state."
+		
+	return "No description available."
