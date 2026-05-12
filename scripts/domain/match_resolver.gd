@@ -128,7 +128,7 @@ static func analyze_shape(_board, positions: Array[Vector2i]) -> MatchShape:
 	
 	return MatchShape.LINE_3
 
-static func find_box_matches(board) -> Array[Array]:
+static func find_box_matches(board) -> Array:
 	var boxes = []
 	for y in range(board.height - 1):
 		for x in range(board.width - 1):
@@ -144,11 +144,11 @@ static func find_box_matches(board) -> Array[Array]:
 					boxes.append([Vector2i(x,y), Vector2i(x+1,y), Vector2i(x,y+1), Vector2i(x+1,y+1)])
 	return boxes
 
-static func merge_groups(groups: Array) -> Array[Array]:
+static func merge_groups(groups: Array) -> Array:
 	if groups.is_empty():
 		return []
 	
-	var merged: Array[Array] = []
+	var merged = []
 	var remaining = groups.duplicate()
 	
 	while not remaining.is_empty():

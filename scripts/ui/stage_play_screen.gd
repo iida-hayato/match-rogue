@@ -436,7 +436,7 @@ func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
 			gem.add_coat(effect)
 			print("[StagePlayScreen] Applied %s to gem at %s" % [effect, center])
 
-func animate_clear(matches: Array[Array]) -> void:
+func animate_clear(matches: Array) -> void:
 	var tween = create_tween().set_parallel(true)
 	var processed_cells = []
 	for m in matches:
