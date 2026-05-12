@@ -288,8 +288,25 @@ func is_adjacent(p1: Vector2i, p2: Vector2i) -> bool:
 
 func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	is_animating = true
+	var gem1 = board_state.get_gem(p1.x, p1.y)
+	var gem2 = board_state.get_gem(p2.x, p2.y)
+
+	if gem1 == null and gem2 == null:
+		is_animating = false
+		update_hud()
+		return
+
+	if gem1 == null or gem2 == null:
+		await animate_move_to_empty(p1, p2)
+		board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
+		stage_state.moves_remaining -= 1
+		update_all_views()
+		is_animating = false
+		update_hud()
+		check_game_end()
+		return
+
 	await animate_swap(p1, p2)
-	
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
 	var include_boxes = run_state.relic_ids.has("relic_box_match")
 	var matches = MatchResolver_.find_matches(board_state, include_boxes)
@@ -300,6 +317,25 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	
 	is_animating = false
 	update_hud()
+
+func animate_move_to_empty(p1: Vector2i, p2: Vector2i) -> void:
+	var source = p1
+	var target = p2
+	if gem_views[source.y][source.x] == null:
+		source = p2
+		target = p1
+
+	var moving_view = gem_views[source.y][source.x]
+	if moving_view == null or gem_views[target.y][target.x] != null:
+		return
+
+	var tween = create_tween()
+	tween.tween_property(moving_view, "position", _board_position_for_cell(target), SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+
+	gem_views[target.y][target.x] = moving_view
+	gem_views[source.y][source.x] = null
+	moving_view.board_pos = target
 
 func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var v1 = gem_views[p1.y][p1.x]

@@ -20,6 +20,7 @@ func _run_tests() -> void:
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
 	await _test_beam_spawn_requires_prism_secret()
+	await _test_move_into_empty_does_not_resolve_match()
 	Engine.time_scale = 1.0
 	await _cleanup()
 
@@ -169,6 +170,25 @@ func _test_beam_spawn_requires_prism_secret() -> void:
 			if gem != null and gem.coat_ids.has("beam"):
 				beam_count += 1
 	_assert_eq(beam_count, 1, "5-clear should create a beam gem only with Prism Secret")
+	screen.free()
+	await process_frame
+
+func _test_move_into_empty_does_not_resolve_match() -> void:
+	var screen = await _create_stage_screen()
+	_clear_board(screen)
+
+	screen.board_state.set_gem(1, 4, GemInstance_.new("red"))
+	screen.board_state.set_gem(2, 4, GemInstance_.new("red"))
+	screen.board_state.set_gem(4, 4, GemInstance_.new("red"))
+	screen.update_all_views()
+
+	await screen.try_swap(Vector2i(4, 4), Vector2i(3, 4))
+
+	_assert_true(screen.board_state.get_gem(3, 4) != null, "moving into an empty cell should move the gem")
+	_assert_eq(screen.board_state.get_gem(3, 4).definition_id, "red", "moved gem should land in the empty cell")
+	_assert_true(screen.board_state.get_gem(1, 4) != null, "line created by moving into empty should not clear left gem")
+	_assert_true(screen.board_state.get_gem(2, 4) != null, "line created by moving into empty should not clear center gem")
+	_assert_eq(screen.board_state.get_gem(4, 4), null, "source cell should become empty after moving into empty")
 	screen.free()
 	await process_frame
 
