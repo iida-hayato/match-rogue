@@ -1,4 +1,3 @@
-class_name ShopGenerator
 extends RefCounted
 
 static func generate_shop_inventory(_stage_index: int, owned_relics: Array[String] = []) -> Array[Dictionary]:

@@ -1,4 +1,3 @@
-class_name GemInstance
 extends RefCounted
 
 var instance_id: String

@@ -3,6 +3,9 @@ extends Control
 signal restart_requested()
 signal endless_requested()
 
+const RunState = preload("res://scripts/domain/run_state.gd")
+const GemInstance = preload("res://scripts/domain/gem_instance.gd")
+
 @onready var title_label: Label = $MarginContainer/VBox/Title
 @onready var reched_label: Label = $MarginContainer/VBox/ReachedLabel
 @onready var stats_grid: GridContainer = $MarginContainer/VBox/StatsGrid

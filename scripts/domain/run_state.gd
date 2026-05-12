@@ -1,4 +1,3 @@
-class_name RunState
 extends RefCounted
 
 var stage_index: int = 0

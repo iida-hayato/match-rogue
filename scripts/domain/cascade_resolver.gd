@@ -1,4 +1,3 @@
-class_name CascadeResolver
 extends RefCounted
 
 static func apply_gravity(board) -> Array:

@@ -1,6 +1,13 @@
 extends Control
 
-var run_state: RunState
+const RunState_ = preload("res://scripts/domain/run_state.gd")
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
+const DeckState_ = preload("res://scripts/domain/deck_state.gd")
+const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
+const ShopService_ = preload("res://scripts/domain/shop_service.gd")
+const ShopGenerator_ = preload("res://scripts/domain/shop_generator.gd")
+
+var run_state: Object 
 var current_screen: Control
 
 func _ready() -> void:
@@ -27,7 +34,6 @@ func create_options_button(_parent: Control) -> Button:
 	return btn
 
 func load_options_screen() -> void:
-	# Hide current screen if needed, or just layer on top
 	var options_scene = load("res://scenes/screens/options_screen.tscn")
 	var options = options_scene.instantiate()
 	add_child(options)
@@ -35,22 +41,23 @@ func load_options_screen() -> void:
 	options.back_to_title_requested.connect(func(): options.queue_free())
 
 func start_new_run() -> void:
-	run_state = RunState.new()
+	run_state = RunState_.new()
 	setup_initial_deck()
 	load_stage_intro(run_state.stage_index)
+
 func setup_initial_deck() -> void:
 	run_state.master_deck = []
 	var gem_definitions = ["red", "blue", "green", "yellow", "purple"]
 	for def_id in gem_definitions:
 		for i in range(20):
-			run_state.master_deck.append(GemInstance.new(def_id))
+			run_state.master_deck.append(GemInstance_.new(def_id))
 
 func load_stage_intro(stage_index: int) -> void:
 	if current_screen:
 		remove_child(current_screen)
 		current_screen.queue_free()
 	
-	var plan = StageMaster.create_plan(stage_index)
+	var plan = StageMaster_.create_plan(stage_index)
 	var intro_scene = load("res://scenes/screens/stage_intro_screen.tscn")
 	var intro = intro_scene.instantiate()
 	add_child(intro)
@@ -65,32 +72,29 @@ func load_stage(stage_index: int) -> void:
 	if current_screen:
 		remove_child(current_screen)
 		current_screen.queue_free()
-
-	# Create a fresh DeckState from the master_deck for this stage
-	var stage_gems: Array[GemInstance] = []
+	
+	var stage_gems: Array = []
 	for gem in run_state.master_deck:
 		stage_gems.append(gem.duplicate())
-	var stage_deck = DeckState.new(stage_gems)
-
-	var plan = StageMaster.create_plan(stage_index)
+	var stage_deck = DeckState_.new(stage_gems)
+	
+	var plan = StageMaster_.create_plan(stage_index)
 	print("[MainScene] Stage Plan: Target=%d, Moves=%d" % [plan.target_score, plan.move_limit])
 	var play_screen_scene = load("res://scenes/screens/stage_play_screen.tscn")
 	var play_screen = play_screen_scene.instantiate()
 	add_child(play_screen)
 	play_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	current_screen = play_screen
-
+	
 	play_screen.initialize_stage(run_state, stage_deck, plan)
 	play_screen.stage_finished.connect(_on_stage_finished.bind(plan))
 	play_screen.view_deck_requested.connect(load_deck_edit_screen.bind("view", 0))
 
-
 func _on_stage_finished(success: bool, plan: Object) -> void:
 	if success:
 		var stage_state = current_screen.stage_state
-		var breakdown = ShopService.calculate_gold_reward_breakdown(stage_state, plan.target_score)
+		var breakdown = ShopService_.calculate_gold_reward_breakdown(stage_state, plan.target_score)
 		
-		# Record rewards
 		run_state.gold += breakdown.total
 		run_state.total_gold_earned += breakdown.total
 		
@@ -121,6 +125,7 @@ func _on_clear_continue_pressed() -> void:
 
 func load_result_screen() -> void:
 	if current_screen:
+		remove_child(current_screen)
 		current_screen.queue_free()
 	
 	var result_screen_scene = load("res://scenes/screens/result_screen.tscn")
@@ -134,30 +139,26 @@ func load_result_screen() -> void:
 
 func _on_endless_requested() -> void:
 	run_state.is_endless = true
-	# Stage index is already at 14 (end of normal run), 
-	# so load_shop will prepare for stage 14 (first endless stage)
 	load_shop()
 
 func load_shop() -> void:
 	if current_screen:
 		remove_child(current_screen)
 		current_screen.queue_free()
-
-	var next_plan = StageMaster.create_plan(run_state.stage_index)
-	var inventory = ShopGenerator.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
-
+	
+	var next_plan = StageMaster_.create_plan(run_state.stage_index)
+	var inventory = ShopGenerator_.generate_shop_inventory(run_state.stage_index, run_state.relic_ids)
+	
 	var shop_screen_scene = load("res://scenes/screens/shop_screen.tscn")
-
 	var shop_screen = shop_screen_scene.instantiate()
 	add_child(shop_screen)
 	shop_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	current_screen = shop_screen
-
+	
 	shop_screen.initialize_shop(run_state, next_plan, inventory)
 	shop_screen.shop_finished.connect(_on_shop_finished)
 	shop_screen.remove_gem_requested.connect(load_deck_edit_screen.bind("remove", 1))
 	shop_screen.view_deck_requested.connect(load_deck_edit_screen.bind("view", 0))
-
 
 func _on_shop_finished() -> void:
 	load_stage_intro(run_state.stage_index)
@@ -183,7 +184,7 @@ func load_deck_edit_screen(mode: String, count: int) -> void:
 		if current_screen:
 			current_screen.visible = true
 			if current_screen.has_method("update_ui"):
-				current_screen.update_ui(StageMaster.create_plan(run_state.stage_index))
+				current_screen.update_ui(StageMaster_.create_plan(run_state.stage_index))
 	)
 	
 	edit_screen.cancelled.connect(func():

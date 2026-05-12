@@ -1,4 +1,3 @@
-class_name ScoreCalculator
 extends RefCounted
 
 static func calculate_score(cleared_gems: Array, chain_index: int, relic_ids: Array[String] = []) -> Dictionary:

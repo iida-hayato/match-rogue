@@ -1,4 +1,3 @@
-class_name ShopService
 extends RefCounted
 
 static func calculate_gold_reward_breakdown(stage_state: Object, target_score: int) -> Dictionary:

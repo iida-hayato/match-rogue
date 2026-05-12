@@ -1,4 +1,3 @@
-class_name StagePlan
 extends RefCounted
 
 var stage_index: int

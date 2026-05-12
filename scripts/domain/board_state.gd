@@ -1,4 +1,3 @@
-class_name BoardState
 extends RefCounted
 
 var width: int = 8

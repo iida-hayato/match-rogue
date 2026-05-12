@@ -4,6 +4,12 @@ signal shop_finished()
 signal remove_gem_requested()
 signal view_deck_requested()
 
+const RunState = preload("res://scripts/domain/run_state.gd")
+const GemInstance = preload("res://scripts/domain/gem_instance.gd")
+const StageMaster = preload("res://scripts/domain/stage_master.gd")
+const GemTextureManager = preload("res://scripts/ui/gem_texture_manager.gd")
+const ShopGenerator = preload("res://scripts/domain/shop_generator.gd")
+
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
 @onready var next_button: Button = $MarginContainer/VBox/NextButton

@@ -17,6 +17,16 @@ signal view_deck_requested()
 @onready var discard_label: Label = $MarginContainer/VBox/MainLayout/RightPanel/DeckInfo/DiscardPileLabel
 @onready var relics_container: GridContainer = $MarginContainer/VBox/MainLayout/RightPanel/RelicsContainer
 
+const RunState_ = preload("res://scripts/domain/run_state.gd")
+const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
+const DeckState_ = preload("res://scripts/domain/deck_state.gd")
+const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
+const BoardState_ = preload("res://scripts/domain/board_state.gd")
+const StageState_ = preload("res://scripts/domain/stage_state.gd")
+const MatchResolver_ = preload("res://scripts/domain/match_resolver.gd")
+const CascadeResolver_ = preload("res://scripts/domain/cascade_resolver.gd")
+const ScoreCalculator_ = preload("res://scripts/domain/score_calculator.gd")
+const GemTextureManager_ = preload("res://scripts/ui/gem_texture_manager.gd")
 const GEM_VIEW_SCENE = preload("res://scenes/components/gem_view.tscn")
 
 var run_state
@@ -50,13 +60,13 @@ func _ready() -> void:
 	$MarginContainer/VBox/MainLayout/RightPanel/ViewDeckButton.pressed.connect(_on_view_deck_pressed)
 	# Standalone test
 	if get_tree().current_scene == self:
-		var mock_run = RunState.new()
-		var initial_gems: Array[GemInstance] = []
+		var mock_run = RunState_.new()
+		var initial_gems: Array = []
 		var defs = ["red", "blue", "green", "yellow", "purple"]
 		for i in range(100):
-			initial_gems.append(GemInstance.new(defs[i % defs.size()]))
-		var mock_deck = DeckState.new(initial_gems)
-		var mock_plan = StageMaster.create_plan(0)
+			initial_gems.append(GemInstance_.new(defs[i % defs.size()]))
+		var mock_deck = DeckState_.new(initial_gems)
+		var mock_plan = StageMaster_.create_plan(0)
 		initialize_stage(mock_run, mock_deck, mock_plan)
 
 func _setup_pause_overlay() -> void:
@@ -105,8 +115,8 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	print("[StagePlayScreen] Initializing Stage: %d (Target Score: %d)" % [plan.stage_index, plan.target_score])
 	run_state = run
 	deck_state = deck
-	board_state = BoardState.new(8, 8)
-	stage_state = StageState.new()
+	board_state = BoardState_.new(8, 8)
+	stage_state = StageState_.new()
 	stage_state.target_score = plan.target_score
 	stage_state.moves_remaining = plan.move_limit
 	stage_state.obstacle_rate = plan.obstacle_rate
@@ -150,7 +160,7 @@ func update_relics() -> void:
 		tex_rect.custom_minimum_size = Vector2(48, 48)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tex_rect.texture = GemTextureManager.get_relic_texture(relic_id)
+		tex_rect.texture = GemTextureManager_.get_relic_texture(relic_id)
 		
 		# Tooltip
 		tex_rect.tooltip_text = _get_relic_description(relic_id)
@@ -181,7 +191,6 @@ func show_announcement(label: Label, text: String, sub_text: String = "") -> voi
 	label.visible = false
 
 func setup_board_views() -> void:
-	print("[StagePlayScreen] Setting up board views. Current children: %d" % board_view.get_child_count())
 	for child in board_view.get_children():
 		child.queue_free()
 	
@@ -196,7 +205,6 @@ func setup_board_views() -> void:
 			gem_view.board_pos = Vector2i(x, y)
 			gem_view.gem_clicked.connect(_on_gem_clicked)
 			gem_views[y][x] = gem_view
-	print("[StagePlayScreen] Board views setup complete.")
 
 func initial_refill() -> void:
 	print("[StagePlayScreen] Starting initial refill...")
@@ -204,15 +212,13 @@ func initial_refill() -> void:
 	var iterations = 0
 	while iterations < max_iterations:
 		iterations += 1
-		# Initial refill doesn't have obstacles usually, but for consistency let's use the rate
-		CascadeResolver.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
-		var matches = MatchResolver.find_matches(board_state)
+		CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+		var matches = MatchResolver_.find_matches(board_state)
 		if matches.size() == 0:
 			break
 		
-		print("[StagePlayScreen] Match found in initial refill (iteration %d), clearing..." % iterations)
 		for m in matches:
-			for pos in m:
+			for pos in m.positions:
 				var gem = board_state.get_gem(pos.x, pos.y)
 				if gem:
 					if not gem.is_stone():
@@ -221,7 +227,6 @@ func initial_refill() -> void:
 	
 	update_all_views()
 	update_deck_ui()
-	print("[StagePlayScreen] Initial refill complete after %d iterations." % iterations)
 
 func update_all_views() -> void:
 	for y in range(8):
@@ -266,7 +271,7 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
 	var include_boxes = run_state.relic_ids.has("relic_box_match")
-	var matches = MatchResolver.find_matches(board_state, include_boxes)
+	var matches = MatchResolver_.find_matches(board_state, include_boxes)
 	if matches.size() > 0:
 		stage_state.moves_remaining -= 1
 		update_hud()
@@ -289,7 +294,6 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	tween.tween_property(v2, "position", pos1, SWAP_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
 	
-	# Update references and board_pos
 	gem_views[p1.y][p1.x] = v2
 	gem_views[p2.y][p2.x] = v1
 	v1.board_pos = p2
@@ -326,31 +330,25 @@ func resolve_board() -> void:
 			break
 
 		var include_boxes = run_state.relic_ids.has("relic_box_match")
-		var match_results = MatchResolver.find_matches(board_state, include_boxes)
+		var match_results = MatchResolver_.find_matches(board_state, include_boxes)
 		if match_results.size() == 0:
 			break
 
-		# Identify direct match positions and shapes
 		var matched_positions = []
 		for res in match_results:
 			matched_positions.append_array(res.positions)
-			# Trigger Special Action for non-LINE_3 shapes
-			if res.shape != MatchResolver.MatchShape.LINE_3:
+			if res.shape != MatchResolver_.MatchShape.LINE_3:
 				_trigger_special_action_for_shape(res)
 
-		# Identify effect positions (Rockets, Bombs, etc. - including those triggered above)
-		var effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions)
+		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions)
 		
-		# All cleared positions (matches + effects)
 		var all_cleared_positions = matched_positions.duplicate()
 		for pos in effect_positions:
 			if not pos in all_cleared_positions:
 				all_cleared_positions.append(pos)
 				
-		# Identify stones to break based on ALL cleared positions
-		var stone_breaks = MatchResolver.find_stone_breaks(board_state, all_cleared_positions)
+		var stone_breaks = MatchResolver_.find_stone_breaks(board_state, all_cleared_positions)
 		
-		# Combined animation groups
 		var combined_clears = []
 		for res in match_results:
 			combined_clears.append(res.positions)
@@ -361,7 +359,6 @@ func resolve_board() -> void:
 			
 		await animate_clear(combined_clears)
 		
-		# Calculate score and discard
 		var cleared_gems = []
 		for pos in all_cleared_positions:
 			var gem = board_state.get_gem(pos.x, pos.y)
@@ -374,14 +371,12 @@ func resolve_board() -> void:
 					deck_state.discard(gem)
 				board_state.set_gem(pos.x, pos.y, null)
 		
-		# Clear stones from board
 		for pos in stone_breaks:
 			board_state.set_gem(pos.x, pos.y, null)
 		
-		var score_result = ScoreCalculator.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
+		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
 		
-		# Update RunState cumulative stats
 		run_state.total_score += score_result.delta
 		run_state.total_gems_cleared += cleared_gems.size()
 		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
@@ -399,10 +394,10 @@ func resolve_board() -> void:
 		update_hud()
 		update_deck_ui()
 		
-		var movements = CascadeResolver.apply_gravity(board_state)
+		var movements = CascadeResolver_.apply_gravity(board_state)
 		await animate_movements(movements)
 		
-		var spawns = CascadeResolver.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+		var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
 		await animate_spawns(spawns)
 		
 		update_all_views()
@@ -412,18 +407,17 @@ func resolve_board() -> void:
 func _trigger_special_action_for_shape(match_res: Dictionary) -> void:
 	var shape = match_res.shape
 	var positions = match_res.positions
-	var center = positions[0] # Simplification
+	var center = positions[0]
 
 	print("[StagePlayScreen] Special Action for Shape: %s" % shape)
 
-	# Determine effect type
 	var effect = ""
 	match shape:
-		MatchResolver.MatchShape.LINE_4, MatchResolver.MatchShape.L_SHAPE:
+		MatchResolver_.MatchShape.LINE_4, MatchResolver_.MatchShape.L_SHAPE:
 			effect = "rocket_v" if randf() > 0.5 else "rocket_h"
-		MatchResolver.MatchShape.T_SHAPE, MatchResolver.MatchShape.CROSS, MatchResolver.MatchShape.LINE_5:
+		MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS, MatchResolver_.MatchShape.LINE_5:
 			effect = "bomb"
-		MatchResolver.MatchShape.BOX_4:
+		MatchResolver_.MatchShape.BOX_4:
 			effect = "coin"
 
 	if effect != "":
@@ -455,7 +449,6 @@ func animate_movements(movements: Array) -> void:
 	if movements.is_empty(): return
 	
 	var tween = create_tween().set_parallel(true)
-	# Important: process from bottom up to avoid overwriting views we still need
 	var sorted_moves = movements.duplicate()
 	sorted_moves.sort_custom(func(a, b): return a.to.y > b.to.y)
 	

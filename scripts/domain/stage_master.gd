@@ -1,5 +1,6 @@
-class_name StageMaster
 extends RefCounted
 
-static func create_plan(stage_index: int) -> StagePlan:
-	return StagePlan.new(stage_index)
+const StagePlan_ = preload("res://scripts/domain/stage_plan.gd")
+
+static func create_plan(stage_index: int) -> Object:
+	return StagePlan_.new(stage_index)

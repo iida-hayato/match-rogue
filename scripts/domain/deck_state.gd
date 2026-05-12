@@ -1,4 +1,3 @@
-class_name DeckState
 extends RefCounted
 
 var draw_pile: Array[GemInstance] = []

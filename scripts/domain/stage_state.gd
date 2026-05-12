@@ -1,4 +1,3 @@
-class_name StageState
 extends RefCounted
 
 var target_score: int = 1000

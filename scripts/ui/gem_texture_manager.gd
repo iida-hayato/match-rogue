@@ -1,4 +1,3 @@
-class_name GemTextureManager
 extends Node
 
 # Explicitly preloading textures ensures they are included in the export 

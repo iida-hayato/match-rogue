@@ -2,6 +2,8 @@ extends TextureRect
 
 signal gem_clicked(pos: Vector2i)
 
+const GemTextureManager = preload("res://scripts/ui/gem_texture_manager.gd")
+
 @onready var effect_overlay: TextureRect = $EffectOverlay
 
 var board_pos: Vector2i

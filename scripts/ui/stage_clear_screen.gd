@@ -2,6 +2,8 @@ extends Control
 
 signal continue_requested()
 
+const StageState = preload("res://scripts/domain/stage_state.gd")
+
 @onready var title_label: Label = $MarginContainer/VBox/Title
 @onready var score_label: Label = $MarginContainer/VBox/Stats/ScoreLabel
 @onready var moves_label: Label = $MarginContainer/VBox/Stats/MovesLabel
