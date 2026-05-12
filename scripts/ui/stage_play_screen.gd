@@ -84,9 +84,10 @@ func _setup_pause_overlay() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		var overlay = get_node("PauseOverlay")
-		overlay.visible = !overlay.visible
-		get_tree().paused = overlay.visible
+		var overlay = get_node_or_null("PauseOverlay")
+		if overlay:
+			overlay.visible = !overlay.visible
+			get_tree().paused = overlay.visible
 		return
 
 	if is_animating or selected_pos == null or get_tree().paused:
@@ -216,6 +217,7 @@ func initial_refill() -> void:
 		if matches.size() == 0:
 			break
 		
+		# For initial refill, we must also null out gem_views to keep them in sync
 		for m in matches:
 			for pos in m.positions:
 				var gem = board_state.get_gem(pos.x, pos.y)
@@ -223,6 +225,10 @@ func initial_refill() -> void:
 					if not gem.is_stone():
 						deck_state.discard(gem)
 					board_state.set_gem(pos.x, pos.y, null)
+				
+				# Also visually "clear" (hidden) for initial setup
+				if gem_views[pos.y][pos.x]:
+					gem_views[pos.y][pos.x].visible = false
 	
 	update_all_views()
 	update_deck_ui()
@@ -285,6 +291,8 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	var v1 = gem_views[p1.y][p1.x]
 	var v2 = gem_views[p2.y][p2.x]
+	if not v1 or not v2: return
+	
 	var pos1 = v1.position
 	var pos2 = v2.position
 	
@@ -348,6 +356,7 @@ func resolve_board() -> void:
 				
 		var stone_breaks = MatchResolver_.find_stone_breaks(board_state, all_cleared_positions)
 		
+		# Ensure visually everything intended is included in combined_clears
 		var combined_clears = []
 		for res in match_results:
 			combined_clears.append(res.positions)
@@ -359,19 +368,21 @@ func resolve_board() -> void:
 		await animate_clear(combined_clears)
 		
 		var cleared_gems = []
-		for pos in all_cleared_positions:
+		# We use all_cleared_positions PLUS stone_breaks to null out the board
+		var total_logical_clears = all_cleared_positions.duplicate()
+		for pos in stone_breaks:
+			if not pos in total_logical_clears:
+				total_logical_clears.append(pos)
+				
+		for pos in total_logical_clears:
 			var gem = board_state.get_gem(pos.x, pos.y)
 			if gem:
-				cleared_gems.append(gem)
-				if gem.coat_ids.has("coin"):
-					stage_state.gold_earned += 1
-				
 				if not gem.is_stone():
+					cleared_gems.append(gem)
+					if gem.coat_ids.has("coin"):
+						stage_state.gold_earned += 1
 					deck_state.discard(gem)
 				board_state.set_gem(pos.x, pos.y, null)
-		
-		for pos in stone_breaks:
-			board_state.set_gem(pos.x, pos.y, null)
 		
 		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
 		stage_state.score += score_result.delta
@@ -381,8 +392,8 @@ func resolve_board() -> void:
 		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
 		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
 		
-		if all_cleared_positions.size() > 0:
-			_spawn_score_popups(all_cleared_positions, score_result.delta / all_cleared_positions.size())
+		if cleared_gems.size() > 0:
+			_spawn_score_popups(all_cleared_positions, score_result.delta / max(1, all_cleared_positions.size()))
 		
 		if stage_state.chain_index > 0:
 			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result.delta)
@@ -448,6 +459,7 @@ func animate_movements(movements: Array) -> void:
 	if movements.is_empty(): return
 	
 	var tween = create_tween().set_parallel(true)
+	# Important: process from bottom up to avoid overwriting views we still need
 	var sorted_moves = movements.duplicate()
 	sorted_moves.sort_custom(func(a, b): return a.to.y > b.to.y)
 	
