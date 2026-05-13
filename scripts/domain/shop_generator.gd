@@ -11,15 +11,6 @@ static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
 	var relic = generate_relic(run_state.relic_ids)
 	if relic:
 		inventory.append(relic)
-	else:
-		# 全レリック所持時は代わりに消費アイテム
-		inventory.append(generate_consumable())
-	
-	# コート付きGem or 消費アイテム x1
-	if randf() < 0.5:
-		inventory.append(generate_coated_gem())
-	else:
-		inventory.append(generate_consumable())
 		
 	return inventory
 
