@@ -65,3 +65,6 @@ func get_current_stage_name() -> String:
 	var world = int(floor(stage_index / 4.0)) + 1
 	var stage = (stage_index % 4) + 1
 	return "%d-%d" % [world, stage]
+
+func get_stage_progress_text() -> String:
+	return get_current_stage_name()

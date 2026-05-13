@@ -93,13 +93,10 @@ func load_stage(stage_index: int) -> void:
 func _on_stage_finished(success: bool, plan: Object) -> void:
 	if success:
 		var stage_state = current_screen.stage_state
-		var breakdown = ShopService_.calculate_gold_reward_breakdown(stage_state, plan.target_score, run_state.gold, run_state.relic_ids, run_state.stage_index)
+		var breakdown = ShopService_.calculate_gold_reward_breakdown(stage_state, plan.target_score)
 		
 		run_state.gold += breakdown.total
 		run_state.total_gold_earned += breakdown.total
-		
-		if breakdown.piggy_bank_bonus > 0:
-			print("[MainScene] Piggy Bank Interest earned: ", breakdown.piggy_bank_bonus)
 		
 		load_stage_clear_screen(run_state.get_stage_progress_text(), stage_state, plan.target_score, breakdown)
 	else:
