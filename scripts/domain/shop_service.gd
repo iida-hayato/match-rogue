@@ -1,12 +1,12 @@
 extends RefCounted
 
 static func calculate_gold_reward_breakdown(stage_state: Object, target_score: int) -> Dictionary:
-	var clear_bonus = 8
-	var moves_bonus = stage_state.moves_remaining * 1
+	var clear_bonus = 16
+	var moves_bonus = stage_state.moves_remaining * 2
 	var excess = max(0, stage_state.score - target_score)
-	var over_score_bonus = excess / 500
+	var over_score_bonus = int(excess / 250)
 	
-	var coin_gem_bonus = stage_state.gold_earned
+	var coin_gem_bonus = stage_state.gold_earned * 2
 	
 	var total = clear_bonus + moves_bonus + over_score_bonus + coin_gem_bonus
 	

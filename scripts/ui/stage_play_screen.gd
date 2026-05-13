@@ -45,6 +45,8 @@ const CLEAR_DURATION = 0.2
 const FALL_DURATION = 0.2
 const MAX_CHAIN_STEPS = 50
 const MAX_RESOLUTION_STEPS = 100
+const MIN_TILE_SIZE = 12.0
+const BOARD_PADDING = 12.0
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
 var tile_size: float = 64.0
@@ -151,7 +153,7 @@ func update_hud() -> void:
 	var obstacle_info = ""
 	if stage_state.obstacle_rate > 0:
 		obstacle_info = " (Obs: %d%%)" % int(stage_state.obstacle_rate * 100)
-	stage_label.text = "Stage: %s%s" % [run_state.get_current_stage_name(), obstacle_info]
+	stage_label.text = "Stage: %s%s" % [run_state.get_stage_progress_text(), obstacle_info]
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
@@ -361,15 +363,15 @@ func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
 	for pos in positions:
 		var label = Label.new()
 		label.text = str(value_per_gem)
-		label.add_theme_font_size_override("font_size", 32)
+		label.add_theme_font_size_override("font_size", int(clamp(tile_size * 0.65, 18.0, 32.0)))
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
-		label.add_theme_constant_override("outline_size", 6)
+		label.add_theme_constant_override("outline_size", int(clamp(tile_size * 0.12, 3.0, 6.0)))
 		
 		board_view.add_child(label)
 		label.position = _board_position_for_cell(pos) + Vector2(tile_size * 0.3, 0)
 		
 		var tween = create_tween().set_parallel(true)
-		tween.tween_property(label, "position:y", label.position.y - 60, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(label, "position:y", label.position.y - max(28.0, tile_size), 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tween.tween_property(label, "modulate:a", 0.0, 0.8).set_delay(0.2)
 		tween.finished.connect(func(): label.queue_free())
 
@@ -609,18 +611,20 @@ func _refresh_board_layout() -> void:
 	if board_state == null:
 		return
 
-	var available_size = board_view.size
+	var padding = Vector2(BOARD_PADDING, BOARD_PADDING)
+	var available_size = board_view.size - (padding * 2.0)
 	if available_size.x <= 0.0 or available_size.y <= 0.0:
-		available_size = board_stack.custom_minimum_size
+		available_size = board_stack.custom_minimum_size - (padding * 2.0)
 
 	tile_size = floor(min(
 		available_size.x / max(1, board_state.width),
 		available_size.y / max(1, board_state.height)
 	))
-	tile_size = max(16.0, tile_size)
+	tile_size = max(MIN_TILE_SIZE, tile_size)
 
 	var board_pixel_size = Vector2(board_state.width * tile_size, board_state.height * tile_size)
-	board_origin = (available_size - board_pixel_size) * 0.5
+	var centered_offset = (available_size - board_pixel_size) * 0.5
+	board_origin = padding + Vector2(floor(centered_offset.x), floor(centered_offset.y))
 
 func _board_position_for_cell(cell: Vector2i) -> Vector2:
 	return board_origin + Vector2(cell.x * tile_size, cell.y * tile_size)

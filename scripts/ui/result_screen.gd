@@ -27,7 +27,7 @@ func _ready() -> void:
 		mock_run.largest_clear = 24
 		var mock_relics: Array[String] = ["relic_mining", "relic_chain"]
 		mock_run.relic_ids = mock_relics
-		for i in range(20): mock_run.master_deck.append(GemInstance_.new("red"))
+		for i in range(60): mock_run.master_deck.append(GemInstance_.new("red"))
 		initialize_result(mock_run)
 
 
@@ -39,7 +39,7 @@ func initialize_result(run: Object) -> void:
 		endless_button.visible = !run.is_endless
 	else:
 		title_label.text = "RUN FINISHED"
-		reched_label.text = "Reached Stage %s" % run.get_current_stage_name()
+		reched_label.text = "Reached Stage %s" % run.format_stage_progress(run.stage_index)
 		endless_button.visible = false
 	
 	_set_stat("Total Score", str(run.total_score))

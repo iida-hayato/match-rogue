@@ -26,6 +26,7 @@ const DescriptionService_ = preload("res://scripts/domain/description_service.gd
 # New service buttons
 var reroll_button: Button
 var view_deck_button: Button
+var shop_relics_container: GridContainer
 
 var run_state
 var next_stage_plan
@@ -35,34 +36,83 @@ var reroll_cost: int = 3
 func _ready() -> void:
 	next_button.pressed.connect(_on_next_button_pressed)
 	detail_close_btn.pressed.connect(func(): detail_overlay.visible = false)
-	
-	# Create service UI
-	var main_vbox = $MarginContainer/VBox
-	var service_hbox = HBoxContainer.new()
-	service_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	service_hbox.add_theme_constant_override("separation", 16)
-	main_vbox.add_child(service_hbox)
-	main_vbox.move_child(service_hbox, 4) # Insert before next stage info
-	
-	reroll_button = Button.new()
-	reroll_button.text = "Reroll: %dG" % reroll_cost
-	reroll_button.custom_minimum_size = Vector2(170, 48)
-	reroll_button.add_theme_font_size_override("font_size", 20)
-	reroll_button.pressed.connect(_on_reroll_pressed)
-	service_hbox.add_child(reroll_button)
-	
-	view_deck_button = Button.new()
-	view_deck_button.text = "View Deck"
-	view_deck_button.custom_minimum_size = Vector2(170, 48)
-	view_deck_button.add_theme_font_size_override("font_size", 20)
-	view_deck_button.pressed.connect(_on_view_deck_pressed)
-	service_hbox.add_child(view_deck_button)
+
+	_build_shop_layout()
+	_build_service_ui()
 
 	if get_tree().current_scene == self:
 		var mock_run = RunState_.new()
 		var mock_plan = StageMaster_.create_plan(1)
 		var mock_inv = ShopGenerator_.generate_shop_inventory(mock_run)
 		initialize_shop(mock_run, mock_plan, mock_inv)
+
+func _build_shop_layout() -> void:
+	var main_vbox = $MarginContainer/VBox
+	var main_layout = HBoxContainer.new()
+	main_layout.name = "MainLayout"
+	main_layout.size_flags_horizontal = SIZE_EXPAND_FILL
+	main_layout.size_flags_vertical = SIZE_EXPAND_FILL
+	main_layout.add_theme_constant_override("separation", 24)
+	main_vbox.add_child(main_layout)
+	main_vbox.move_child(main_layout, 2)
+
+	var items_column = VBoxContainer.new()
+	items_column.size_flags_horizontal = SIZE_EXPAND_FILL
+	items_column.size_flags_vertical = SIZE_EXPAND_FILL
+	main_layout.add_child(items_column)
+
+	var sidebar = VBoxContainer.new()
+	sidebar.name = "Sidebar"
+	sidebar.custom_minimum_size = Vector2(260, 0)
+	sidebar.add_theme_constant_override("separation", 14)
+	main_layout.add_child(sidebar)
+
+	main_vbox.remove_child(items_container)
+	items_column.add_child(items_container)
+	items_container.size_flags_horizontal = SIZE_EXPAND_FILL
+
+	main_vbox.remove_child(next_stage_info)
+	sidebar.add_child(next_stage_info)
+	next_stage_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+	var relics_label = Label.new()
+	relics_label.text = "Relics"
+	relics_label.add_theme_font_size_override("font_size", 22)
+	sidebar.add_child(relics_label)
+
+	shop_relics_container = GridContainer.new()
+	shop_relics_container.columns = 3
+	shop_relics_container.add_theme_constant_override("h_separation", 10)
+	shop_relics_container.add_theme_constant_override("v_separation", 10)
+	sidebar.add_child(shop_relics_container)
+
+	var spacer = Control.new()
+	spacer.size_flags_vertical = SIZE_EXPAND_FILL
+	sidebar.add_child(spacer)
+
+	main_vbox.remove_child(next_button)
+	sidebar.add_child(next_button)
+	next_button.size_flags_horizontal = SIZE_EXPAND_FILL
+	next_button.custom_minimum_size = Vector2(0, 54)
+
+func _build_service_ui() -> void:
+	var sidebar = $MarginContainer/VBox/MainLayout/Sidebar
+
+	reroll_button = Button.new()
+	reroll_button.text = "Reroll: %dG" % reroll_cost
+	reroll_button.custom_minimum_size = Vector2(170, 48)
+	reroll_button.add_theme_font_size_override("font_size", 20)
+	reroll_button.pressed.connect(_on_reroll_pressed)
+	sidebar.add_child(reroll_button)
+	sidebar.move_child(reroll_button, 1)
+	
+	view_deck_button = Button.new()
+	view_deck_button.text = "View Deck"
+	view_deck_button.custom_minimum_size = Vector2(170, 48)
+	view_deck_button.add_theme_font_size_override("font_size", 20)
+	view_deck_button.pressed.connect(_on_view_deck_pressed)
+	sidebar.add_child(view_deck_button)
+	sidebar.move_child(view_deck_button, 2)
 
 func initialize_shop(run: Object, next_plan: Object, inventory: Array[Dictionary]) -> void:
 	run_state = run
@@ -78,22 +128,21 @@ func update_ui(next_plan: Object) -> void:
 		obstacle_text = " (Obstacle: Stone Gem %d%%)" % int(next_plan.obstacle_rate * 100)
 	
 	next_stage_info.text = "Next Stage: %s (Target: %d)%s" % [
-		run_state.get_current_stage_name(),
+		run_state.format_stage_progress(next_plan.stage_index),
 		next_plan.target_score,
 		obstacle_text
 	]
 	
-	reroll_button.text = "Reroll: %dG" % reroll_cost
-	reroll_button.disabled = run_state.gold < reroll_cost
+	var reroll_price = _get_reroll_price()
+	reroll_button.text = "Reroll: %dG" % reroll_price
+	reroll_button.disabled = run_state.gold < reroll_price
 	
 	# Clear and rebuild inventory
 	for child in items_container.get_children():
 		child.queue_free()
 	
 	for item in current_inventory:
-		var price = item.price
-		if run_state.relic_ids.has("relic_shop"):
-			price = int(price * 0.85) # 15% discount
+		var price = _get_item_price(item)
 		
 		var panel = PanelContainer.new()
 		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -152,17 +201,7 @@ func update_ui(next_plan: Object) -> void:
 	update_relics()
 
 func update_relics() -> void:
-	var main_vbox = $MarginContainer/VBox
-	var relics_container = main_vbox.get_node_or_null("RelicsContainer")
-	if not relics_container:
-		relics_container = HBoxContainer.new()
-		relics_container.name = "RelicsContainer"
-		relics_container.alignment = BoxContainer.ALIGNMENT_CENTER
-		relics_container.add_theme_constant_override("separation", 15)
-		main_vbox.add_child(relics_container)
-		main_vbox.move_child(relics_container, 3) # After gold label
-	
-	for child in relics_container.get_children():
+	for child in shop_relics_container.get_children():
 		child.queue_free()
 		
 	for relic_id in run_state.relic_ids:
@@ -172,7 +211,21 @@ func update_relics() -> void:
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tex_rect.texture = GemTextureManager_.get_relic_texture(relic_id)
 		tex_rect.tooltip_text = DescriptionService_.get_relic_description(relic_id)
-		relics_container.add_child(tex_rect)
+		shop_relics_container.add_child(tex_rect)
+
+func _has_shop_discount() -> bool:
+	return run_state != null and run_state.relic_ids.has("relic_shop")
+
+func _get_discounted_price(base_price: int) -> int:
+	if _has_shop_discount():
+		return max(1, int(floor(base_price * 0.85)))
+	return base_price
+
+func _get_item_price(item: Dictionary) -> int:
+	return _get_discounted_price(int(item.get("price", 0)))
+
+func _get_reroll_price() -> int:
+	return _get_discounted_price(reroll_cost)
 
 func _on_item_panel_input(event: InputEvent, item: Dictionary, price: int) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -243,8 +296,9 @@ func apply_purchase(item: Dictionary) -> void:
 			print("Purchased item: %s" % item.id)
 
 func _on_reroll_pressed() -> void:
-	if run_state.gold >= reroll_cost:
-		run_state.gold -= reroll_cost
+	var reroll_price = _get_reroll_price()
+	if run_state.gold >= reroll_price:
+		run_state.gold -= reroll_price
 		current_inventory = ShopGenerator_.generate_shop_inventory(run_state)
 		reroll_cost += 1
 		update_ui(next_stage_plan)

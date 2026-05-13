@@ -67,4 +67,10 @@ func get_current_stage_name() -> String:
 	return "%d-%d" % [world, stage]
 
 func get_stage_progress_text() -> String:
-	return get_current_stage_name()
+	return format_stage_progress(stage_index)
+
+func format_stage_progress(display_stage_index: int) -> String:
+	var progress = display_stage_index + 1
+	if is_endless and progress > max_stages:
+		return "%d / %d (Endless)" % [progress, max_stages]
+	return "%d / %d" % [min(progress, max_stages), max_stages]

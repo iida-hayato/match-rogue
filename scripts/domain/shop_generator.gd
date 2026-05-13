@@ -65,7 +65,7 @@ static func _create_board_upgrade_item(
 		"axis": axis,
 		"color": color,
 		"effect": effect,
-		"price": 12 + (purchased_count * 6),
+		"price": 6 + (purchased_count * 3),
 		"current_size": current_size,
 		"max_size": max_size,
 		"maxed": current_size >= max_size

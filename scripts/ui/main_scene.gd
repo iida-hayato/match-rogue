@@ -49,7 +49,7 @@ func setup_initial_deck() -> void:
 	run_state.master_deck = []
 	var gem_definitions = ["red", "blue", "green", "yellow", "purple"]
 	for def_id in gem_definitions:
-		for i in range(20):
+		for i in range(60):
 			run_state.master_deck.append(GemInstance_.new(def_id))
 
 func load_stage_intro(stage_index: int) -> void:
