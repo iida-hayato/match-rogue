@@ -18,6 +18,8 @@ static var effects = {
 	"bomb": preload("res://assets/textures/gems/effect_bomb.svg"),
 	"beam": preload("res://assets/textures/gems/effect_beam.svg"),
 	"coin": preload("res://assets/textures/gems/effect_coin.svg"),
+	"add_row": preload("res://assets/textures/gems/effect_add_row.svg"),
+	"add_column": preload("res://assets/textures/gems/effect_add_column.svg"),
 }
 
 static var relics = {

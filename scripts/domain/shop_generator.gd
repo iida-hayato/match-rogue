@@ -21,7 +21,7 @@ static func get_persistent_shop_items(run_state: Object) -> Array[Dictionary]:
 			"Add Row",
 			"height",
 			"yellow",
-			"rocket_v",
+			"add_row",
 			run_state.board_height,
 			run_state.get_base_board_height(),
 			run_state.get_max_board_height()
@@ -31,7 +31,7 @@ static func get_persistent_shop_items(run_state: Object) -> Array[Dictionary]:
 			"Add Column",
 			"width",
 			"green",
-			"rocket_h",
+			"add_column",
 			run_state.board_width,
 			run_state.get_base_board_width(),
 			run_state.get_max_board_width()

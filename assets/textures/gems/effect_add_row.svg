@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Grid representation -->
+  <rect x="12" y="24" width="12" height="12" fill="none" stroke="white" stroke-width="3" rx="2"/>
+  <rect x="26" y="24" width="12" height="12" fill="none" stroke="white" stroke-width="3" rx="2"/>
+  <rect x="40" y="24" width="12" height="12" fill="none" stroke="white" stroke-width="3" rx="2"/>
+  
+  <rect x="12" y="38" width="12" height="12" fill="none" stroke="white" stroke-width="1" stroke-dasharray="2,2" rx="2" opacity="0.6"/>
+  <rect x="26" y="38" width="12" height="12" fill="none" stroke="white" stroke-width="1" stroke-dasharray="2,2" rx="2" opacity="0.6"/>
+  <rect x="40" y="38" width="12" height="12" fill="none" stroke="white" stroke-width="1" stroke-dasharray="2,2" rx="2" opacity="0.6"/>
+
+  <!-- Vertical expansion arrows -->
+  <path d="M32 18 V6 M26 10 L32 4 L38 10" fill="none" stroke="#FFCC00" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 46 V58 M26 54 L32 60 L38 54" fill="none" stroke="#FFCC00" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Outer glow/stroke for visibility -->
+  <path d="M32 18 V6 M26 10 L32 4 L38 10 M32 46 V58 M26 54 L32 60 L38 54" fill="none" stroke="black" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

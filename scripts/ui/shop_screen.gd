@@ -154,14 +154,24 @@ func update_ui(next_plan: Object) -> void:
 		panel.add_child(vbox)
 		
 		# Item Texture
+		var icon_container = CenterContainer.new()
+		icon_container.custom_minimum_size = Vector2(64, 64)
+		vbox.add_child(icon_container)
+
 		var tex_rect = TextureRect.new()
-		tex_rect.custom_minimum_size = Vector2(48, 48)
+		tex_rect.custom_minimum_size = Vector2(64, 64)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		vbox.add_child(tex_rect)
+		icon_container.add_child(tex_rect)
 	
 		# Set texture
-		if item.type == "special_gem" or item.type == "coated_gem" or item.type == "board_upgrade":
+		if item.type == "board_upgrade":
+			# For board upgrades, the new icons already represent the board/squares,
+			# so we don't need the base gem texture behind them.
+			var effect_id = item.get("effect", "")
+			if effect_id != "":
+				tex_rect.texture = GemTextureManager_.get_effect_texture(effect_id)
+		elif item.type == "special_gem" or item.type == "coated_gem":
 			var effect_id = item.get("effect", item.get("coat", ""))
 			tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
 			if effect_id != "":
@@ -169,6 +179,7 @@ func update_ui(next_plan: Object) -> void:
 				overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
 				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				tex_rect.add_child(overlay)
 		elif item.type == "relic":
 			tex_rect.texture = GemTextureManager_.get_relic_texture(item.id)
@@ -237,8 +248,18 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 	detail_price.text = "MAX" if item.get("maxed", false) else "Cost: %dG" % price
 	
 	# Icon Setup
+	detail_icon.custom_minimum_size = Vector2(64, 64)
+	detail_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	detail_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	for child in detail_icon.get_children(): child.queue_free()
-	if item.type == "special_gem" or item.type == "coated_gem" or item.type == "board_upgrade":
+	
+	if item.type == "board_upgrade":
+		var effect_id = item.get("effect", "")
+		if effect_id != "":
+			detail_icon.texture = GemTextureManager_.get_effect_texture(effect_id)
+		else:
+			detail_icon.texture = null
+	elif item.type == "special_gem" or item.type == "coated_gem":
 		var effect_id = item.get("effect", item.get("coat", ""))
 		detail_icon.texture = GemTextureManager_.get_gem_texture(item.color)
 		if effect_id != "":
@@ -246,6 +267,7 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 			overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
 			overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			detail_icon.add_child(overlay)
 	elif item.type == "relic":
 		detail_icon.texture = GemTextureManager_.get_relic_texture(item.id)
