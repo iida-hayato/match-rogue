@@ -7,8 +7,8 @@ var obstacle_rate: float # 0.0 to 1.0
 
 func _init(idx: int) -> void:
 	stage_index = idx
-	# Scaling formula based on 08_open_questions_and_tuning.md
-	var curve = [500, 800, 1200, 1800, 2600, 3800, 5500, 8000, 12000, 18000, 28000, 42000, 64000, 100000]
+	# Updated target curve: starts lower, ends at 50k for normal run
+	var curve = [250, 400, 600, 900, 1300, 1900, 2750, 4000, 6000, 9000, 14000, 21000, 32000, 50000]
 	if stage_index < curve.size():
 		target_score = curve[stage_index]
 	else:

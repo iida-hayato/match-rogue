@@ -64,7 +64,7 @@ func load_stage_intro(stage_index: int) -> void:
 	intro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	current_screen = intro
 	
-	intro.initialize(run_state.get_current_stage_name(), plan)
+	intro.initialize(run_state.get_stage_progress_text(), plan)
 	intro.start_requested.connect(load_stage.bind(stage_index))
 
 func load_stage(stage_index: int) -> void:
@@ -93,12 +93,15 @@ func load_stage(stage_index: int) -> void:
 func _on_stage_finished(success: bool, plan: Object) -> void:
 	if success:
 		var stage_state = current_screen.stage_state
-		var breakdown = ShopService_.calculate_gold_reward_breakdown(stage_state, plan.target_score)
+		var breakdown = ShopService_.calculate_gold_reward_breakdown(stage_state, plan.target_score, run_state.gold, run_state.relic_ids, run_state.stage_index)
 		
 		run_state.gold += breakdown.total
 		run_state.total_gold_earned += breakdown.total
 		
-		load_stage_clear_screen(run_state.get_current_stage_name(), stage_state, plan.target_score, breakdown)
+		if breakdown.piggy_bank_bonus > 0:
+			print("[MainScene] Piggy Bank Interest earned: ", breakdown.piggy_bank_bonus)
+		
+		load_stage_clear_screen(run_state.get_stage_progress_text(), stage_state, plan.target_score, breakdown)
 	else:
 		load_result_screen()
 
@@ -118,7 +121,8 @@ func load_stage_clear_screen(stage_name: String, stage_state: Object, target_sco
 
 func _on_clear_continue_pressed() -> void:
 	run_state.stage_index += 1
-	if run_state.stage_index < run_state.max_stages:
+	# Step 4b: Correct progression check for Endless Mode
+	if run_state.stage_index < run_state.max_stages or run_state.is_endless:
 		load_shop()
 	else:
 		load_result_screen()
@@ -200,12 +204,7 @@ func load_deck_edit_screen(mode: String, count: int) -> void:
 			current_screen.visible = true
 	)
 
-func _handle_deck_edit_result(mode: String, indices: Array[int]) -> void:
+func _handle_deck_edit_result(mode: String, _indices: Array[int]) -> void:
 	match mode:
-		"remove":
-			var sorted_indices = indices.duplicate()
-			sorted_indices.sort()
-			sorted_indices.reverse()
-			for i in sorted_indices:
-				run_state.master_deck.remove_at(i)
-			print("[MainScene] Removed %d gems from master deck." % indices.size())
+		"select":
+			pass
