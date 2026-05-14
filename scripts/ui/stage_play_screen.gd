@@ -39,6 +39,7 @@ var stage_state
 var gem_views = [] # 2D array [y][x]
 var selected_pos = null
 var is_animating = false
+var run_finished: bool = false
 
 const SWAP_DURATION = 0.15
 const CLEAR_DURATION = 0.2
@@ -132,6 +133,7 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	
 	selected_pos = null
 	is_animating = false
+	run_finished = false
 	
 	setup_board_views()
 	_refresh_board_layout()
@@ -162,6 +164,7 @@ func update_hud() -> void:
 	
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
+	_maybe_finish_run()
 
 func update_relics() -> void:
 	for child in relics_container.get_children():
@@ -577,9 +580,13 @@ func resolve_board(allow_refill: bool) -> void:
 	check_game_end()
 
 func check_game_end() -> void:
+	if run_finished:
+		return
 	if stage_state.is_cleared():
+		run_finished = true
 		stage_finished.emit(true)
 	elif _should_end_run():
+		run_finished = true
 		stage_finished.emit(false)
 
 func _should_end_run() -> bool:
@@ -592,6 +599,12 @@ func _should_end_run() -> bool:
 	if stage_state.drop_charges_remaining <= 0:
 		return true
 	return not board_state.has_empty_cells()
+
+func _maybe_finish_run() -> void:
+	if run_finished or stage_state == null:
+		return
+	if stage_state.is_cleared() or _should_end_run():
+		check_game_end()
 
 func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
