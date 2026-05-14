@@ -160,7 +160,9 @@ func update_hud() -> void:
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
 	drop_button.text = "Drop: %d" % stage_state.drop_charges_remaining
-	drop_button.disabled = is_animating or stage_state.drop_charges_remaining <= 0
+	# Drop is allowed even when moves are exhausted, as long as empty cells remain.
+	# The game-over check handles the case where both moves and drops are unavailable.
+	drop_button.disabled = is_animating or stage_state.drop_charges_remaining <= 0 or not board_state.has_empty_cells()
 	
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
@@ -610,7 +612,7 @@ func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
 
 func _on_drop_pressed() -> void:
-	if is_animating or get_tree().paused or stage_state == null or stage_state.moves_remaining <= 0 or stage_state.drop_charges_remaining <= 0:
+	if is_animating or get_tree().paused or stage_state == null or stage_state.drop_charges_remaining <= 0:
 		return
 	if not board_state.has_empty_cells():
 		return
