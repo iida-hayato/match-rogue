@@ -579,8 +579,19 @@ func resolve_board(allow_refill: bool) -> void:
 func check_game_end() -> void:
 	if stage_state.is_cleared():
 		stage_finished.emit(true)
-	elif stage_state.is_game_over():
+	elif _should_end_run():
 		stage_finished.emit(false)
+
+func _should_end_run() -> bool:
+	if stage_state == null:
+		return false
+	if stage_state.moves_remaining > 0:
+		return false
+	if stage_state.score >= stage_state.target_score:
+		return false
+	if stage_state.drop_charges_remaining <= 0:
+		return true
+	return not board_state.has_empty_cells()
 
 func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
