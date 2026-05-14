@@ -98,7 +98,7 @@ func _input(event: InputEvent) -> void:
 			get_tree().paused = overlay.visible
 		return
 
-	if is_animating or selected_pos == null or get_tree().paused:
+	if is_animating or selected_pos == null or get_tree().paused or stage_state == null or stage_state.moves_remaining <= 0:
 		return
 	
 	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
@@ -268,7 +268,7 @@ func update_gem_view(x: int, y: int) -> void:
 		view.size = Vector2(tile_size, tile_size)
 
 func _on_gem_clicked(pos: Vector2i) -> void:
-	if is_animating or get_tree().paused: return
+	if is_animating or get_tree().paused or stage_state == null or stage_state.moves_remaining <= 0: return
 	
 	if selected_pos == null:
 		selected_pos = pos
@@ -301,7 +301,7 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	if gem1 == null or gem2 == null:
 		await animate_move_to_empty(p1, p2)
 		board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
-		stage_state.moves_remaining -= 1
+		stage_state.moves_remaining = max(0, stage_state.moves_remaining - 1)
 		update_all_views()
 		is_animating = false
 		update_hud()
@@ -312,7 +312,7 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 	board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
 	var include_boxes = run_state.relic_ids.has("relic_box_match")
 	var matches = MatchResolver_.find_matches(board_state, include_boxes)
-	stage_state.moves_remaining -= 1
+	stage_state.moves_remaining = max(0, stage_state.moves_remaining - 1)
 	update_hud()
 	if matches.size() > 0:
 		await resolve_board(false)
@@ -586,7 +586,7 @@ func _on_view_deck_pressed() -> void:
 	view_deck_requested.emit()
 
 func _on_drop_pressed() -> void:
-	if is_animating or get_tree().paused or stage_state.drop_charges_remaining <= 0:
+	if is_animating or get_tree().paused or stage_state == null or stage_state.moves_remaining <= 0 or stage_state.drop_charges_remaining <= 0:
 		return
 	if not board_state.has_empty_cells():
 		return
