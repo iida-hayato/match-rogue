@@ -39,6 +39,7 @@ var stage_state
 var gem_views = [] # 2D array [y][x]
 var selected_pos = null
 var is_animating = false
+var resolution_in_progress: bool = false
 var run_finished: bool = false
 
 const SWAP_DURATION = 0.15
@@ -134,6 +135,7 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 	selected_pos = null
 	is_animating = false
 	run_finished = false
+	resolution_in_progress = false
 	
 	setup_board_views()
 	_refresh_board_layout()
@@ -310,7 +312,6 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 		# Empty-cell moves are disabled; only swaps between two gems are valid.
 		is_animating = false
 		update_hud()
-		check_game_end()
 		return
 
 	await animate_swap(p1, p2)
@@ -479,6 +480,7 @@ func animate_spawns(spawns: Array) -> void:
 	await tween.finished
 
 func resolve_board(allow_refill: bool) -> void:
+	resolution_in_progress = true
 	stage_state.chain_index = 0
 	var resolution_steps = 0
 
@@ -579,6 +581,7 @@ func resolve_board(allow_refill: bool) -> void:
 			
 			update_all_views()
 
+	resolution_in_progress = false
 	check_game_end()
 
 func check_game_end() -> void:
@@ -594,6 +597,8 @@ func check_game_end() -> void:
 func _should_end_run() -> bool:
 	if stage_state == null:
 		return false
+	if resolution_in_progress or is_animating:
+		return false
 	if stage_state.moves_remaining > 0:
 		return false
 	if stage_state.score >= stage_state.target_score:
@@ -604,6 +609,8 @@ func _should_end_run() -> bool:
 
 func _maybe_finish_run() -> void:
 	if run_finished or stage_state == null:
+		return
+	if resolution_in_progress or is_animating:
 		return
 	if stage_state.is_cleared() or _should_end_run():
 		check_game_end()

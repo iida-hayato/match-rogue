@@ -23,6 +23,7 @@ func _run_tests() -> void:
 	await _test_beam_range_relic_extends_diagonal_clear()
 	await _test_rocket_range_relic_extends_line_clear()
 	await _test_bomb_diagonal_relic_adds_corner_cells()
+	await _test_end_run_waits_during_resolution()
 	await _test_move_into_empty_is_blocked()
 	Engine.time_scale = 1.0
 	await _cleanup()
@@ -203,6 +204,20 @@ func _test_bomb_diagonal_relic_adds_corner_cells() -> void:
 	_assert_true(not (Vector2i(1, 1) in base_effects), "base bomb should not hit diagonals")
 	_assert_true(Vector2i(1, 1) in relic_effects, "bomb diagonal relic should include diagonal cells")
 	_assert_true(Vector2i(3, 3) in relic_effects, "bomb diagonal relic should include the opposite diagonal")
+
+func _test_end_run_waits_during_resolution() -> void:
+	var screen = await _create_stage_screen()
+	screen.stage_state.moves_remaining = 0
+	screen.stage_state.drop_charges_remaining = 0
+	screen.stage_state.score = 0
+	screen.stage_state.target_score = 999
+
+	screen.resolution_in_progress = true
+	_assert_true(not screen._should_end_run(), "game over should wait while resolution is in progress")
+	screen.resolution_in_progress = false
+	_assert_true(screen._should_end_run(), "game over should trigger after resolution ends")
+	screen.free()
+	await process_frame
 
 func _test_move_into_empty_is_blocked() -> void:
 	var screen = await _create_stage_screen()
