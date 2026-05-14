@@ -52,6 +52,7 @@ const BOARD_PADDING = 12.0
 
 var gem_definitions: Array[String] = ["red", "blue", "green", "yellow", "purple"]
 var tile_size: float = 64.0
+var gem_visual_size: float = 56.0
 var board_origin: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
@@ -270,12 +271,14 @@ func update_gem_view(x: int, y: int) -> void:
 	if gem and view:
 		view.setup_gem(gem)
 		view.visible = true
-		view.size = Vector2(tile_size, tile_size)
-		view.position = _board_position_for_cell(Vector2i(x, y))
+		view.custom_minimum_size = Vector2(gem_visual_size, gem_visual_size)
+		view.size = Vector2(gem_visual_size, gem_visual_size)
+		view.position = _board_position_for_cell(Vector2i(x, y)) + _get_gem_visual_offset()
 		view.board_pos = Vector2i(x, y)
 	elif view:
 		view.visible = false
-		view.size = Vector2(tile_size, tile_size)
+		view.custom_minimum_size = Vector2(gem_visual_size, gem_visual_size)
+		view.size = Vector2(gem_visual_size, gem_visual_size)
 
 func _on_gem_clicked(pos: Vector2i) -> void:
 	if is_animating or get_tree().paused or stage_state == null or stage_state.moves_remaining <= 0: return
@@ -450,7 +453,7 @@ func animate_movements(movements: Array) -> void:
 			
 			var dist = abs(to.y - from.y)
 			var duration = FALL_DURATION + (dist * 0.05)
-			var target_pos = _board_position_for_cell(to)
+			var target_pos = _board_position_for_gem(to)
 			tween.tween_property(view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	await tween.finished
@@ -467,14 +470,15 @@ func animate_spawns(spawns: Array) -> void:
 		gem_view.board_pos = to
 		gem_view.gem_clicked.connect(_on_gem_clicked)
 		gem_view.setup_gem(spawn.gem)
-		gem_view.size = Vector2(tile_size, tile_size)
+		gem_view.custom_minimum_size = Vector2(gem_visual_size, gem_visual_size)
+		gem_view.size = Vector2(gem_visual_size, gem_visual_size)
 		gem_views[to.y][to.x] = gem_view
 		
-		gem_view.position = _board_position_for_spawn(from)
+		gem_view.position = _board_position_for_spawn(from) + _get_gem_visual_offset()
 		
 		var dist = abs(to.y - from.y)
 		var duration = FALL_DURATION + (dist * 0.05)
-		var target_pos = _board_position_for_cell(to)
+		var target_pos = _board_position_for_gem(to)
 		tween.tween_property(gem_view, "position", target_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	await tween.finished
@@ -658,12 +662,28 @@ func _refresh_board_layout() -> void:
 	var board_pixel_size = Vector2(board_state.width * tile_size, board_state.height * tile_size)
 	var centered_offset = (available_size - board_pixel_size) * 0.5
 	board_origin = padding + Vector2(floor(centered_offset.x), floor(centered_offset.y))
+	gem_visual_size = _get_gem_visual_size()
 
 func _board_position_for_cell(cell: Vector2i) -> Vector2:
 	return board_origin + Vector2(cell.x * tile_size, cell.y * tile_size)
 
 func _board_position_for_spawn(spawn_cell: Vector2i) -> Vector2:
 	return board_origin + Vector2(spawn_cell.x * tile_size, spawn_cell.y * tile_size)
+
+func _board_position_for_gem(cell: Vector2i) -> Vector2:
+	return _board_position_for_cell(cell) + _get_gem_visual_offset()
+
+func _get_gem_visual_size() -> float:
+	if board_state == null:
+		return max(24.0, tile_size * 0.9)
+
+	var board_scale = max(board_state.width, board_state.height)
+	var shrink_ratio = clamp(0.96 - ((board_scale - 8) * 0.025), 0.72, 0.96)
+	return max(24.0, floor(tile_size * shrink_ratio))
+
+func _get_gem_visual_offset() -> Vector2:
+	var inset = max(0.0, (tile_size - gem_visual_size) * 0.5)
+	return Vector2(inset, inset)
 
 func _on_board_view_resized() -> void:
 	if board_state != null:
@@ -708,6 +728,7 @@ func _create_gem_view_at_position(pos: Vector2i, gem: Object) -> void:
 	gem_view.board_pos = pos
 	gem_view.gem_clicked.connect(_on_gem_clicked)
 	gem_view.setup_gem(gem)
-	gem_view.size = Vector2(tile_size, tile_size)
-	gem_view.position = _board_position_for_cell(pos)
+	gem_view.custom_minimum_size = Vector2(gem_visual_size, gem_visual_size)
+	gem_view.size = Vector2(gem_visual_size, gem_visual_size)
+	gem_view.position = _board_position_for_gem(pos)
 	gem_views[pos.y][pos.x] = gem_view

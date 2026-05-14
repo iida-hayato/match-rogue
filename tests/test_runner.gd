@@ -24,6 +24,7 @@ func _run_tests() -> void:
 	await _test_rocket_range_relic_extends_line_clear()
 	await _test_bomb_diagonal_relic_adds_corner_cells()
 	await _test_end_run_waits_during_resolution()
+	await _test_gem_visual_size_shrinks_on_large_board()
 	await _test_move_into_empty_is_blocked()
 	Engine.time_scale = 1.0
 	await _cleanup()
@@ -216,6 +217,24 @@ func _test_end_run_waits_during_resolution() -> void:
 	_assert_true(not screen._should_end_run(), "game over should wait while resolution is in progress")
 	screen.resolution_in_progress = false
 	_assert_true(screen._should_end_run(), "game over should trigger after resolution ends")
+	screen.free()
+	await process_frame
+
+func _test_gem_visual_size_shrinks_on_large_board() -> void:
+	var screen = await _create_stage_screen()
+	screen.run_state.board_width = 12
+	screen.run_state.board_height = 12
+	screen.board_state = BoardState_.new(12, 12)
+	screen.setup_board_views()
+	screen.update_all_views()
+
+	var gem = GemInstance_.new("red")
+	screen.board_state.set_gem(0, 0, gem)
+	screen.update_all_views()
+
+	var view = screen.gem_views[0][0]
+	_assert_true(view != null, "large board should still create gem views")
+	_assert_true(view.size.x < screen.tile_size, "gem visuals should be smaller than the tile on large boards")
 	screen.free()
 	await process_frame
 
