@@ -9,6 +9,9 @@ static func get_relic_description(id: String) -> String:
 		"relic_rocket_workshop": return "Rocket Workshop: 4 in a row creates a rocket gem."
 		"relic_bomb_workshop": return "Bomb Workshop: T and cross matches create a bomb gem."
 		"relic_prism_secret": return "Prism Secret: 5 in a row creates a diagonal beam gem."
+		"relic_beam_range": return "Lens Scope: Diagonal beams reach 1 tile farther."
+		"relic_rocket_range": return "Nozzle Extender: Rockets reach 1 tile farther."
+		"relic_bomb_diagonal": return "Shrapnel Core: Bombs also hit diagonals."
 	return "No description available."
 
 static func get_gem_description(gem: Object) -> String:

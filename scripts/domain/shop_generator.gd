@@ -80,7 +80,10 @@ static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
 		{"id": "relic_box_match", "name": "Magic Box", "type": "relic", "price": 25},
 		{"id": "relic_rocket_workshop", "name": "Rocket Workshop", "type": "relic", "price": 24},
 		{"id": "relic_bomb_workshop", "name": "Bomb Workshop", "type": "relic", "price": 28},
-		{"id": "relic_prism_secret", "name": "Prism Secret", "type": "relic", "price": 30}
+		{"id": "relic_prism_secret", "name": "Prism Secret", "type": "relic", "price": 30},
+		{"id": "relic_beam_range", "name": "Precision Lens", "type": "relic", "price": 20},
+		{"id": "relic_rocket_range", "name": "Barrel Extender", "type": "relic", "price": 20},
+		{"id": "relic_bomb_diagonal", "name": "Shrapnel Ring", "type": "relic", "price": 24}
 	]
 	
 	# フィルター

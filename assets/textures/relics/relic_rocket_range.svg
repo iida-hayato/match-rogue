@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Relic Base -->
+  <path d="M32 4 L54 14 V44 L32 60 L10 44 V14 Z" fill="#2A2A2A" stroke="#42A5F5" stroke-width="3"/>
+  
+  <!-- Rocket Symbol (Simplified) -->
+  <path d="M32 16 L40 28 H36 V48 H28 V28 H24 Z" fill="#64B5F6"/>
+  
+  <!-- Range Arrows (Vertical) -->
+  <path d="M32 12 V4 M28 8 L32 4 L36 8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 52 V60 M28 56 L32 60 L36 56" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- +1 Badge -->
+  <circle cx="48" cy="48" r="10" fill="#1E88E5" stroke="white" stroke-width="2"/>
+  <path d="M44 48 H52 M48 44 V52" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg>

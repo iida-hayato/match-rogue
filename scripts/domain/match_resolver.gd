@@ -214,11 +214,14 @@ static func find_stone_breaks(board: Object, cleared_positions: Array) -> Array[
 	
 	return stones_to_break
 
-static func find_effect_positions(board: Object, cleared_positions: Array) -> Array[Vector2i]:
+static func find_effect_positions(board: Object, cleared_positions: Array, relic_ids: Array[String] = []) -> Array[Vector2i]:
 	var effect_positions: Array[Vector2i] = []
 	var seen: Dictionary = {}
 	var queue = cleared_positions.duplicate()
 	var processed_special_gems: Dictionary = {}
+	var rocket_range = LINE_EFFECT_RANGE + (1 if relic_ids.has("relic_rocket_range") else 0)
+	var beam_range = DIAGONAL_EFFECT_RANGE + (1 if relic_ids.has("relic_beam_range") else 0)
+	var bomb_has_diagonals = relic_ids.has("relic_bomb_diagonal")
 	
 	while not queue.is_empty():
 		var pos = queue.pop_back()
@@ -233,10 +236,10 @@ static func find_effect_positions(board: Object, cleared_positions: Array) -> Ar
 			var pattern = []
 			match effect:
 				"rocket_v":
-					for dy in range(-LINE_EFFECT_RANGE, LINE_EFFECT_RANGE + 1):
+					for dy in range(-rocket_range, rocket_range + 1):
 						pattern.append(Vector2i(pos.x, pos.y + dy))
 				"rocket_h":
-					for dx in range(-LINE_EFFECT_RANGE, LINE_EFFECT_RANGE + 1):
+					for dx in range(-rocket_range, rocket_range + 1):
 						pattern.append(Vector2i(pos.x + dx, pos.y))
 				"bomb":
 					pattern.append(pos)
@@ -244,8 +247,13 @@ static func find_effect_positions(board: Object, cleared_positions: Array) -> Ar
 					pattern.append(Vector2i(pos.x + 1, pos.y))
 					pattern.append(Vector2i(pos.x, pos.y - 1))
 					pattern.append(Vector2i(pos.x, pos.y + 1))
+					if bomb_has_diagonals:
+						pattern.append(Vector2i(pos.x - 1, pos.y - 1))
+						pattern.append(Vector2i(pos.x + 1, pos.y - 1))
+						pattern.append(Vector2i(pos.x - 1, pos.y + 1))
+						pattern.append(Vector2i(pos.x + 1, pos.y + 1))
 				"beam":
-					for i in range(-DIAGONAL_EFFECT_RANGE, DIAGONAL_EFFECT_RANGE + 1):
+					for i in range(-beam_range, beam_range + 1):
 						pattern.append(Vector2i(pos.x + i, pos.y + i))
 						pattern.append(Vector2i(pos.x + i, pos.y - i))
 			

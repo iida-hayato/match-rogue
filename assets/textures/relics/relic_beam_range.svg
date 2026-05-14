@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Relic Base (Shield/Emblem shape) -->
+  <path d="M32 4 L54 14 V44 L32 60 L10 44 V14 Z" fill="#2A2A2A" stroke="#7E57C2" stroke-width="3"/>
+  
+  <!-- Beam Symbol -->
+  <rect x="16" y="28" width="32" height="8" rx="2" fill="#9575CD" opacity="0.8"/>
+  <rect x="12" y="30" width="40" height="4" rx="2" fill="white"/>
+  
+  <!-- Range Extension Indicators (+1) -->
+  <path d="M52 32 H60 M56 28 V36" stroke="#BA68C8" stroke-width="3" stroke-linecap="round"/>
+  <path d="M12 32 H4 M8 28 V36" stroke="#BA68C8" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Glowing core -->
+  <circle cx="32" cy="32" r="6" fill="white" opacity="0.5">
+    <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
+  </circle>
+</svg>

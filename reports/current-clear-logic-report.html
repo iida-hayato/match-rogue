@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Current Clear Logic Report</title>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#94a3b8;--accent:#38bdf8;--line:#243244;--code:#0b1220;--good:#22c55e;--warn:#f59e0b;}
+    body{margin:0;background:linear-gradient(180deg,#0f172a 0%,#111827 100%);color:var(--text);font:14px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    main{max-width:1180px;margin:0 auto;padding:32px;}
+    .panel{background:rgba(17,24,39,.92);border:1px solid var(--line);border-radius:14px;padding:20px;margin:0 0 18px;box-shadow:0 18px 45px rgba(0,0,0,.25);} 
+    h1{font-size:30px;margin:0 0 10px;} h2{font-size:18px;margin:0 0 10px;color:var(--accent);} h3{margin:16px 0 8px;}
+    p,ul{margin:0 0 12px;} .muted{color:var(--muted);} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;}
+    .kpi{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(15,23,42,.7);} .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;} .value{font-size:20px;font-weight:700;margin-top:4px;}
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:10px;margin-top:8px;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:10px 12px;vertical-align:top;} th{color:#bfdbfe;background:#0b1220;}
+    code,pre{background:var(--code);border:1px solid var(--line);border-radius:10px;color:#dbeafe;} pre{padding:14px;overflow:auto;margin:0;}
+    .flow{display:grid;grid-template-columns:1fr;gap:10px;} .step{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(15,23,42,.75);position:relative;overflow:hidden;display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:start;} .step .n{color:var(--good);font-weight:700;font-size:18px;line-height:1;}
+    .step::after{content:"";position:absolute;left:23px;bottom:-18px;width:12px;height:12px;border-left:2px solid rgba(56,189,248,.4);border-bottom:2px solid rgba(56,189,248,.4);transform:rotate(-45deg);} .step:last-child::after{display:none;}
+    .timeline{display:grid;grid-template-columns:1fr;gap:12px;} .lane{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.72);} .lane .label{color:#bfdbfe;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+    .lane .body{color:var(--text);} .lane .body strong{color:#fff;} .arrow{color:var(--accent);font-size:18px;font-weight:700;padding-top:4px;}
+    .uml{display:grid;grid-template-columns:1fr;gap:12px;} .umlbox{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(15,23,42,.72);} .umlbox .title{color:#bfdbfe;font-weight:700;margin-bottom:8px;} .umlbox ul{margin-bottom:0;padding-left:18px;}
+    .umlseq{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start;} .seqcol{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(15,23,42,.72);min-height:180px;} .seqcol .title{color:#bfdbfe;font-weight:700;margin-bottom:8px;text-align:center;} .seqcol .msg{margin:8px 0;padding:8px 10px;background:#0b1220;border:1px solid var(--line);border-radius:10px;}
+    .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#bae6fd;font-size:12px;}
+    .warn{color:#fde68a;}
+  </style>
+</head>
+<body>
+<main>
+  <section class="panel">
+    <h1>Current Clear Logic Report</h1>
+    <p class="muted">Diffなし。いまの消去ロジックが「どの順で」「何を参照して」解決しているかを、実装の読み取り結果として整理したレポート。</p>
+    <p><span class="pill">Scope</span> `scripts/domain/match_resolver.gd` と `scripts/ui/stage_play_screen.gd` の消去・連鎖処理</p>
+  </section>
+
+  <section class="panel">
+    <h2>Executive Summary</h2>
+    <div class="grid">
+      <div class="kpi"><div class="label">中心ロジック</div><div class="value">MatchResolver + StagePlayScreen</div></div>
+      <div class="kpi"><div class="label">解決の主順序</div><div class="value">match → effect → stone → clear → gravity → refill</div></div>
+      <div class="kpi"><div class="label">特殊扱い</div><div class="value">Box / Rocket / Bomb / Beam / Stone</div></div>
+      <div class="kpi"><div class="label">拡張ポイント</div><div class="value">Relic-driven effect range</div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Resolution Flow</h2>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><div><div>盤面から match を検出</div><div class="muted">横・縦の連続同色を探索し、必要なら box を追加。</div></div></div>
+      <div class="step"><div class="n">2</div><div><div>match shape を分類</div><div class="muted">LINE_3/4/5, L, T, CROSS, BOX_4 を判定。</div></div></div>
+      <div class="step"><div class="n">3</div><div><div>特殊効果の伝播先を計算</div><div class="muted">rocket / bomb / beam の効果範囲を展開。</div></div></div>
+      <div class="step"><div class="n">4</div><div><div>stone を周辺破壊</div><div class="muted">消去対象の周囲 8 近傍から stone を回収。</div></div></div>
+      <div class="step"><div class="n">5</div><div><div>消去・スコア・discard</div><div class="muted">通常 gem は discard、stone は除外。</div></div></div>
+      <div class="step"><div class="n">6</div><div><div>gravity → refill</div><div class="muted">落下後に deck から補充し、チェイン継続。</div></div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Clear Pipeline</h2>
+    <div class="timeline">
+      <div class="lane"><div class="label">Match</div><div class="body"><strong>find_matches()</strong> が横・縦列を収集し、merge で複合形状にまとめる。必要なら box を追加。</div></div>
+      <div class="lane"><div class="label">Effect</div><div class="body"><strong>find_effect_positions()</strong> が rocket / bomb / beam を展開し、リレー的に追加消去を拾う。relic_ids で射程が変わる。</div></div>
+      <div class="lane"><div class="label">Stone</div><div class="body"><strong>find_stone_breaks()</strong> が消去対象の 8 近傍から stone を回収する。stone は通常 gem と分けて扱う。</div></div>
+      <div class="lane"><div class="label">Clear</div><div class="body">通常 gem を discard へ送り、盤面から消す。coin coat はここで +1 gold。</div></div>
+      <div class="lane"><div class="label">Cascade</div><div class="body">gravity で落下し、allow_refill なら deck から補充する。次の chain 判定へ。</div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>How Matching Works</h2>
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>Current Behavior</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Horizontal / Vertical scan</td><td>各行・各列で同一 definition_id の連続列を収集</td><td>3 以上のみ match 候補になる</td></tr>
+        <tr><td>Merge</td><td>重なっているグループを統合</td><td>T/L/Cross のような複合形状を作れる</td></tr>
+        <tr><td>Box detection</td><td>2x2 の同色を検出し、必要なら match 群に統合</td><td>`relic_box_match` がある時のみ有効化</td></tr>
+        <tr><td>Shape analysis</td><td>座標分布と分岐数で形状分類</td><td>4 近傍の枝数で L/T/CROSS を分ける</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Special Effects</h2>
+    <table>
+      <thead>
+        <tr><th>Effect</th><th>Base Range</th><th>Relic Modifier</th><th>Observed Impact</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>rocket_v / rocket_h</td><td>縦横 3 マス</td><td>`relic_rocket_range` で +1</td><td>直線チェインの長さが 1 増える</td></tr>
+        <tr><td>bomb</td><td>十字 5 マス</td><td>`relic_bomb_diagonal` で斜め 4 マス追加</td><td>密集盤面で巻き込みが増える</td></tr>
+        <tr><td>beam</td><td>対角 2 マス</td><td>`relic_beam_range` で +1</td><td>長い対角線の掃除力が上がる</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Decision Summary</h2>
+    <table>
+      <thead>
+        <tr><th>Question</th><th>Answer</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Are match shapes independent?</td><td>No. Overlapping runs are merged.</td><td>T/L/Cross の判定が可能になる。</td></tr>
+        <tr><td>Do effects stop at match cells?</td><td>No. Special gems can extend the clear set.</td><td>連鎖の爆発力が盤面状態に依存する。</td></tr>
+        <tr><td>Is stone cleared like normal gems?</td><td>No. It is collected separately after adjacency checks.</td><td>stone の耐性と連鎖の境界が保たれる。</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Structural Diagram</h2>
+    <div class="uml">
+      <div class="umlbox">
+        <div class="title">Class Diagram</div>
+        <table>
+          <thead>
+            <tr><th>Class / Module</th><th>Role</th><th>Key Responsibilities</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>StagePlayScreen</td><td>Orchestrator</td><td>Resolution loop, animation order, mutation sequencing</td></tr>
+            <tr><td>MatchResolver</td><td>Rules engine</td><td>Match detection, shape classification, effect expansion, stone adjacency</td></tr>
+            <tr><td>ScoreCalculator</td><td>Scoring</td><td>Base score, chain multipliers, relic modifiers</td></tr>
+            <tr><td>DeckState / BoardState</td><td>State holders</td><td>Discard/refill, gravity, board mutation</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="umlbox">
+        <div class="title">Sequence Diagram</div>
+        <div class="umlseq">
+          <div class="seqcol">
+            <div class="title">Player / Board</div>
+            <div class="msg">swap / clear trigger</div>
+            <div class="msg">matched cells appear</div>
+          </div>
+          <div class="seqcol">
+            <div class="title">StagePlayScreen</div>
+            <div class="msg">find_matches()</div>
+            <div class="msg">find_effect_positions()</div>
+            <div class="msg">find_stone_breaks()</div>
+            <div class="msg">clear → score → gravity → refill</div>
+          </div>
+          <div class="seqcol">
+            <div class="title">MatchResolver</div>
+            <div class="msg">detect / merge / classify</div>
+            <div class="msg">expand rocket / bomb / beam</div>
+            <div class="msg">collect stone neighbors</div>
+          </div>
+          <div class="seqcol">
+            <div class="title">Score / Deck</div>
+            <div class="msg">calculate score</div>
+            <div class="msg">discard cleared gems</div>
+            <div class="msg">refill after gravity</div>
+          </div>
+          <div class="seqcol">
+            <div class="title">Result</div>
+            <div class="msg">chain continues or ends</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Strengths</h2>
+    <ul>
+      <li>消去解決の責務が `match_resolver.gd` と `stage_play_screen.gd` に分離されていて追いやすい。</li>
+      <li>効果の範囲拡張が relic_ids ベースなので、調整が局所的。</li>
+      <li>stone の扱いが独立していて、通常消去とルールを分けやすい。</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Risks / Watchouts</h2>
+    <ul>
+      <li>効果伝播が queue ベースなので、連鎖条件が増えると再訪制御の見直しが必要。</li>
+      <li>box / line / special spawn の順序は、将来のレリック追加で相互作用が増えやすい。</li>
+      <li>スコア・消去・discard の責務が同一ループにあるため、ルール追加時は副作用を確認したい。</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Reference Snippet</h2>
+    <pre><code>match_results = MatchResolver.find_matches(board_state, include_boxes)
+effect_positions = MatchResolver.find_effect_positions(board_state, matched_positions, run_state.relic_ids)
+stone_breaks = MatchResolver.find_stone_breaks(board_state, all_cleared_positions)
+# clear → score → gravity → refill</code></pre>
+    <p class="muted">実装の中心はこの 4 ステップ。レポートではここを軸に見ると追いやすい。</p>
+  </section>
+</main>
+</body>
+</html>

@@ -20,7 +20,10 @@ func _run_tests() -> void:
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
 	await _test_beam_spawn_requires_prism_secret()
-	await _test_move_into_empty_does_not_resolve_match()
+	await _test_beam_range_relic_extends_diagonal_clear()
+	await _test_rocket_range_relic_extends_line_clear()
+	await _test_bomb_diagonal_relic_adds_corner_cells()
+	await _test_move_into_empty_is_blocked()
 	Engine.time_scale = 1.0
 	await _cleanup()
 
@@ -162,7 +165,46 @@ func _test_beam_spawn_requires_prism_secret() -> void:
 	screen.free()
 	await process_frame
 
-func _test_move_into_empty_does_not_resolve_match() -> void:
+func _test_beam_range_relic_extends_diagonal_clear() -> void:
+	var board = BoardState_.new(7, 7)
+	var beam_gem = GemInstance_.new("purple")
+	beam_gem.add_coat("beam")
+	board.set_gem(3, 3, beam_gem)
+
+	var base_effects = MatchResolver_.find_effect_positions(board, [Vector2i(3, 3)])
+	var relic_effects = MatchResolver_.find_effect_positions(board, [Vector2i(3, 3)], ["relic_beam_range"])
+
+	_assert_true(Vector2i(1, 1) in base_effects, "base beam should reach 2 tiles diagonally")
+	_assert_true(not (Vector2i(0, 0) in base_effects), "base beam should stop before 3 tiles diagonally")
+	_assert_true(Vector2i(0, 0) in relic_effects, "beam range relic should extend diagonal clear by 1")
+
+func _test_rocket_range_relic_extends_line_clear() -> void:
+	var board = BoardState_.new(9, 9)
+	var rocket_gem = GemInstance_.new("red")
+	rocket_gem.add_coat("rocket_v")
+	board.set_gem(4, 4, rocket_gem)
+
+	var base_effects = MatchResolver_.find_effect_positions(board, [Vector2i(4, 4)])
+	var relic_effects = MatchResolver_.find_effect_positions(board, [Vector2i(4, 4)], ["relic_rocket_range"])
+
+	_assert_true(Vector2i(4, 1) in base_effects, "base rocket should reach 3 tiles vertically")
+	_assert_true(not (Vector2i(4, 0) in base_effects), "base rocket should stop before 4 tiles vertically")
+	_assert_true(Vector2i(4, 0) in relic_effects, "rocket range relic should extend vertical clear by 1")
+
+func _test_bomb_diagonal_relic_adds_corner_cells() -> void:
+	var board = BoardState_.new(5, 5)
+	var bomb_gem = GemInstance_.new("yellow")
+	bomb_gem.add_coat("bomb")
+	board.set_gem(2, 2, bomb_gem)
+
+	var base_effects = MatchResolver_.find_effect_positions(board, [Vector2i(2, 2)])
+	var relic_effects = MatchResolver_.find_effect_positions(board, [Vector2i(2, 2)], ["relic_bomb_diagonal"])
+
+	_assert_true(not (Vector2i(1, 1) in base_effects), "base bomb should not hit diagonals")
+	_assert_true(Vector2i(1, 1) in relic_effects, "bomb diagonal relic should include diagonal cells")
+	_assert_true(Vector2i(3, 3) in relic_effects, "bomb diagonal relic should include the opposite diagonal")
+
+func _test_move_into_empty_is_blocked() -> void:
 	var screen = await _create_stage_screen()
 	_clear_board(screen)
 
@@ -173,11 +215,10 @@ func _test_move_into_empty_does_not_resolve_match() -> void:
 
 	await screen.try_swap(Vector2i(4, 4), Vector2i(3, 4))
 
-	_assert_true(screen.board_state.get_gem(3, 4) != null, "moving into an empty cell should move the gem")
-	_assert_eq(screen.board_state.get_gem(3, 4).definition_id, "red", "moved gem should land in the empty cell")
-	_assert_true(screen.board_state.get_gem(1, 4) != null, "line created by moving into empty should not clear left gem")
-	_assert_true(screen.board_state.get_gem(2, 4) != null, "line created by moving into empty should not clear center gem")
-	_assert_eq(screen.board_state.get_gem(4, 4), null, "source cell should become empty after moving into empty")
+	_assert_true(screen.board_state.get_gem(3, 4) == null, "moving into an empty cell should be blocked")
+	_assert_true(screen.board_state.get_gem(4, 4) != null, "source gem should remain in place")
+	_assert_true(screen.board_state.get_gem(1, 4) != null, "blocked move should not clear existing gems")
+	_assert_true(screen.board_state.get_gem(2, 4) != null, "blocked move should not create a match")
 	screen.free()
 	await process_frame
 

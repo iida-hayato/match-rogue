@@ -192,6 +192,9 @@ func _get_relic_description(id: String) -> String:
 		"relic_rocket_workshop": return "Rocket Workshop: 4 in a row creates a rocket gem."
 		"relic_bomb_workshop": return "Bomb Workshop: T and cross matches create a bomb gem."
 		"relic_prism_secret": return "Prism Secret: 5 in a row creates a diagonal beam gem."
+		"relic_beam_range": return "Lens Scope: Diagonal beams reach 1 tile farther."
+		"relic_rocket_range": return "Nozzle Extender: Rockets reach 1 tile farther."
+		"relic_bomb_diagonal": return "Shrapnel Core: Bombs also hit diagonals."
 	return "No description available."
 
 func show_announcement(label: Label, text: String, sub_text: String = "") -> void:
@@ -304,10 +307,7 @@ func try_swap(p1: Vector2i, p2: Vector2i) -> void:
 		return
 
 	if gem1 == null or gem2 == null:
-		await animate_move_to_empty(p1, p2)
-		board_state.swap_gems(p1.x, p1.y, p2.x, p2.y)
-		stage_state.moves_remaining = max(0, stage_state.moves_remaining - 1)
-		update_all_views()
+		# Empty-cell moves are disabled; only swaps between two gems are valid.
 		is_animating = false
 		update_hud()
 		check_game_end()
@@ -507,7 +507,7 @@ func resolve_board(allow_refill: bool) -> void:
 			for pos in res.positions:
 				matched_positions.append(pos)
 
-		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions)
+		var effect_positions = MatchResolver_.find_effect_positions(board_state, matched_positions, run_state.relic_ids)
 		
 		var all_cleared_positions = matched_positions.duplicate()
 		for pos in effect_positions:
