@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Decorative Seal Frame -->
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="#b22222" stroke-width="4"/>
+  <rect x="8" y="8" width="48" height="48" rx="6" fill="#2c1e1e" stroke="#ffd700" stroke-width="1"/>
+  
+  <!-- Falling Gems -->
+  <!-- Top Gem (Blue) -->
+  <path d="M32 12 L40 20 L32 28 L24 20 Z" fill="#4444ff" stroke="#ffffff" stroke-width="1.5">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
+  </path>
+  
+  <!-- Middle Gem (Green) -->
+  <path d="M32 24 L40 32 L32 40 L24 32 Z" fill="#44ff44" stroke="#ffffff" stroke-width="1.5">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+  </path>
+  
+  <!-- Bottom Gem (Red) -->
+  <path d="M32 36 L40 44 L32 52 L24 44 Z" fill="#ff4444" stroke="#ffffff" stroke-width="1.5">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
+  </path>
+  
+  <!-- Motion / Drop Lines -->
+  <path d="M20 15 V49 M44 15 V49" stroke="#ffd700" stroke-width="1" stroke-dasharray="2,4" opacity="0.4"/>
+</svg>
