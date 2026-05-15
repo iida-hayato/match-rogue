@@ -21,6 +21,8 @@ func _run_tests() -> void:
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
 	await _test_beam_spawn_requires_prism_secret()
+	await _test_line5_relic_priority_beats_line4_when_both_present()
+	await _test_l_shape_triggers_bomb_relic()
 	await _test_shop_generates_two_relics()
 	await _test_beam_range_relic_extends_diagonal_clear()
 	await _test_rocket_range_relic_extends_line_clear()
@@ -173,6 +175,54 @@ func _test_beam_spawn_requires_prism_secret() -> void:
 			if gem != null and gem.coat_ids.has("beam"):
 				beam_count += 1
 	_assert_eq(beam_count, 1, "5-clear should create a beam gem only with Prism Secret")
+	screen.free()
+	await process_frame
+
+func _test_line5_relic_priority_beats_line4_when_both_present() -> void:
+	var screen = await _create_stage_screen()
+	screen.run_state.add_relic("relic_rocket_workshop")
+	screen.run_state.add_relic("relic_prism_secret")
+	_clear_board(screen)
+	var positions = [Vector2i(1, 7), Vector2i(2, 7), Vector2i(3, 7), Vector2i(4, 7), Vector2i(5, 7)]
+	for pos in positions:
+		screen.board_state.set_gem(pos.x, pos.y, GemInstance_.new("purple"))
+	screen.update_all_views()
+
+	await screen.resolve_board(false)
+
+	var beam_count = 0
+	var rocket_count = 0
+	for x in range(screen.board_state.width):
+		for y in range(screen.board_state.height):
+			var gem = screen.board_state.get_gem(x, y)
+			if gem != null and gem.coat_ids.size() > 0:
+				if gem.coat_ids.has("beam"):
+					beam_count += 1
+				if gem.coat_ids.has("rocket_v") or gem.coat_ids.has("rocket_h"):
+					rocket_count += 1
+	_assert_eq(beam_count, 1, "5-clear should prefer Prism Secret over Rocket Workshop")
+	_assert_eq(rocket_count, 0, "5-clear should not create a rocket when Prism Secret is present")
+	screen.free()
+	await process_frame
+
+func _test_l_shape_triggers_bomb_relic() -> void:
+	var screen = await _create_stage_screen()
+	screen.run_state.add_relic("relic_bomb_workshop")
+	_clear_board(screen)
+	var positions = [Vector2i(1, 1), Vector2i(1, 2), Vector2i(1, 3), Vector2i(2, 1), Vector2i(3, 1)]
+	for pos in positions:
+		screen.board_state.set_gem(pos.x, pos.y, GemInstance_.new("yellow"))
+	screen.update_all_views()
+
+	await screen.resolve_board(false)
+
+	var bomb_count = 0
+	for x in range(screen.board_state.width):
+		for y in range(screen.board_state.height):
+			var gem = screen.board_state.get_gem(x, y)
+			if gem != null and gem.coat_ids.has("bomb"):
+				bomb_count += 1
+	_assert_eq(bomb_count, 1, "L-shape should trigger Bomb Workshop like T-shape")
 	screen.free()
 	await process_frame
 

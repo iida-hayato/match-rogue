@@ -442,15 +442,15 @@ func _create_special_spawn_for_shape(match_res: Dictionary) -> Dictionary:
 
 func _get_special_effect_for_shape(shape: int) -> String:
 	match shape:
-		MatchResolver_.MatchShape.LINE_4:
-			if run_state.relic_ids.has("relic_rocket_workshop"):
-				return "rocket_v" if randf() > 0.5 else "rocket_h"
-		MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS:
-			if run_state.relic_ids.has("relic_bomb_workshop"):
-				return "bomb"
 		MatchResolver_.MatchShape.LINE_5:
 			if run_state.relic_ids.has("relic_prism_secret"):
 				return "beam"
+		MatchResolver_.MatchShape.LINE_4:
+			if run_state.relic_ids.has("relic_rocket_workshop"):
+				return "rocket_v" if randf() > 0.5 else "rocket_h"
+		MatchResolver_.MatchShape.L_SHAPE, MatchResolver_.MatchShape.T_SHAPE, MatchResolver_.MatchShape.CROSS:
+			if run_state.relic_ids.has("relic_bomb_workshop"):
+				return "bomb"
 		MatchResolver_.MatchShape.BOX_4:
 			return "coin"
 	return ""
