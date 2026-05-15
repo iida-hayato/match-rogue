@@ -9,10 +9,12 @@ func _init(initial_gems: Array = []) -> void:
 	draw_pile = initial_gems
 	draw_pile.shuffle()
 
-func draw_one() -> Object: # GemInstance_
+func draw_one(allow_reshuffle: bool = true) -> Object: # GemInstance_
 	if draw_pile.size() == 0:
 		if discard_pile.size() == 0:
 			# Fallback if somehow both are empty
+			return null
+		if not allow_reshuffle:
 			return null
 		reshuffle()
 	

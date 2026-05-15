@@ -14,17 +14,18 @@ static func apply_gravity(board) -> Array:
 				target_y -= 1
 	return movements
 
-static func refill_from_deck(board, deck, obstacle_rate: float = 0.0) -> Array:
+static func refill_from_deck(board, deck, obstacle_rate: float = 0.0, relic_ids: Array[String] = []) -> Array:
 	var GemInstance_ = load("res://scripts/domain/gem_instance.gd")
 	var spawns = [] # Array of {from: Vector2i, to: Vector2i, gem: GemInstance}
 	var empty_positions: Array[Vector2i] = _get_refill_order(board)
 	var spawn_counts_by_column: Dictionary = {}
+	var allow_reshuffle = not relic_ids.has("relic_no_reshuffle")
 	for pos in empty_positions:
 		var gem = null
 		if randf() < obstacle_rate:
 			gem = GemInstance_.new("stone")
 		else:
-			gem = deck.draw_one()
+			gem = deck.draw_one(allow_reshuffle)
 		
 		if gem == null:
 			break

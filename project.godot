@@ -15,16 +15,16 @@ run/main_scene="res://scenes/app/main_scene.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
-[gui]
-
-theme/custom="res://assets/ui_theme.tres"
-common/tooltip_delay=0.1
-
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[gui]
+
+theme/custom="res://assets/ui_theme.tres"
+common/tooltip_delay=0.1
 
 [rendering]
 

@@ -7,10 +7,13 @@ static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
 	inventory.append(generate_special_gem())
 	inventory.append(generate_special_gem())
 	
-	# レリック x1 (取得済みは除外)
-	var relic = generate_relic(run_state.relic_ids)
-	if relic:
-		inventory.append(relic)
+	# レリック x2 (取得済みは除外)
+	var owned_relics = run_state.relic_ids.duplicate()
+	for _i in range(2):
+		var relic = generate_relic(owned_relics)
+		if relic:
+			inventory.append(relic)
+			owned_relics.append(relic.id)
 		
 	return inventory
 
@@ -83,7 +86,8 @@ static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
 		{"id": "relic_prism_secret", "name": "Prism Secret", "type": "relic", "price": 30},
 		{"id": "relic_beam_range", "name": "Precision Lens", "type": "relic", "price": 20},
 		{"id": "relic_rocket_range", "name": "Barrel Extender", "type": "relic", "price": 20},
-		{"id": "relic_bomb_diagonal", "name": "Shrapnel Ring", "type": "relic", "price": 24}
+		{"id": "relic_bomb_diagonal", "name": "Shrapnel Ring", "type": "relic", "price": 24},
+		{"id": "relic_no_reshuffle", "name": "Auto Drop Seal", "type": "relic", "price": 42}
 	]
 	
 	# フィルター

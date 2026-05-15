@@ -4,6 +4,7 @@ const BoardState_ = preload("res://scripts/domain/board_state.gd")
 const DeckState_ = preload("res://scripts/domain/deck_state.gd")
 const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
 const MatchResolver_ = preload("res://scripts/domain/match_resolver.gd")
+const ShopGenerator_ = preload("res://scripts/domain/shop_generator.gd")
 const RunState_ = preload("res://scripts/domain/run_state.gd")
 const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
 
@@ -20,11 +21,17 @@ func _run_tests() -> void:
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
 	await _test_beam_spawn_requires_prism_secret()
+	await _test_shop_generates_two_relics()
 	await _test_beam_range_relic_extends_diagonal_clear()
 	await _test_rocket_range_relic_extends_line_clear()
 	await _test_bomb_diagonal_relic_adds_corner_cells()
+	await _test_no_reshuffle_relic_blocks_discard_return()
+	await _test_auto_drop_relic_does_not_auto_refill_without_relic()
+	await _test_auto_drop_relic_refills_without_consuming_charge()
 	await _test_end_run_waits_during_resolution()
 	await _test_gem_visual_size_shrinks_on_large_board()
+	await _test_debug_helpers_can_force_relic_and_single_color()
+	await _test_debug_enable_auto_drop_seal_helper()
 	await _test_move_into_empty_is_blocked()
 	Engine.time_scale = 1.0
 	await _cleanup()
@@ -167,6 +174,18 @@ func _test_beam_spawn_requires_prism_secret() -> void:
 	screen.free()
 	await process_frame
 
+func _test_shop_generates_two_relics() -> void:
+	var run_state = RunState_.new()
+	run_state.add_relic("relic_mining")
+	var inventory = ShopGenerator_.generate_shop_inventory(run_state)
+	var relic_ids: Array[String] = []
+	for item in inventory:
+		if item.type == "relic":
+			relic_ids.append(item.id)
+	_assert_eq(relic_ids.size(), 2, "shop should generate two relics")
+	_assert_true(not relic_ids.has("relic_mining"), "owned relics should be excluded from shop relic pool")
+	_assert_true(relic_ids[0] != relic_ids[1], "shop relics should not duplicate in the same inventory")
+
 func _test_beam_range_relic_extends_diagonal_clear() -> void:
 	var board = BoardState_.new(7, 7)
 	var beam_gem = GemInstance_.new("purple")
@@ -206,6 +225,54 @@ func _test_bomb_diagonal_relic_adds_corner_cells() -> void:
 	_assert_true(Vector2i(1, 1) in relic_effects, "bomb diagonal relic should include diagonal cells")
 	_assert_true(Vector2i(3, 3) in relic_effects, "bomb diagonal relic should include the opposite diagonal")
 
+func _test_no_reshuffle_relic_blocks_discard_return() -> void:
+	var deck = DeckState_.new([])
+	var discarded = GemInstance_.new("blue")
+	deck.discard(discarded)
+	var first_draw = deck.draw_one(false)
+	_assert_true(first_draw == null, "draw_one should return null when reshuffle is disabled and draw pile is empty")
+	_assert_eq(deck.discard_pile.size(), 1, "discard should remain untouched when reshuffle is disabled")
+
+func _test_auto_drop_relic_does_not_auto_refill_without_relic() -> void:
+	var screen = await _create_stage_screen()
+	_clear_board(screen)
+	screen.board_state.set_gem(0, 7, GemInstance_.new("red"))
+	screen.board_state.set_gem(1, 7, GemInstance_.new("red"))
+	screen.board_state.set_gem(2, 7, GemInstance_.new("red"))
+	screen.deck_state = DeckState_.new([GemInstance_.new("blue")])
+	screen.update_all_views()
+
+	await screen.resolve_board(false)
+
+	_assert_true(screen.run_state.relic_ids.is_empty(), "test setup should not add relics")
+	_assert_true(screen.board_state.has_empty_cells(), "without the relic, board should stay partially empty after resolution")
+	_assert_eq(screen.deck_state.draw_pile.size(), 1, "without the relic, draw pile should not be consumed by auto drop")
+	screen.free()
+	await process_frame
+
+func _test_auto_drop_relic_refills_without_consuming_charge() -> void:
+	var screen = await _create_stage_screen()
+	screen.run_state.add_relic("relic_no_reshuffle")
+	_clear_board(screen)
+	screen.deck_state = DeckState_.new([GemInstance_.new("red")])
+	screen.stage_state.drop_charges_remaining = 1
+	screen.update_hud()
+
+	await screen.resolve_board(false)
+
+	var found_gem := false
+	for x in range(screen.board_state.width):
+		for y in range(screen.board_state.height):
+			if screen.board_state.get_gem(x, y) != null:
+				found_gem = true
+				break
+		if found_gem:
+			break
+	_assert_true(found_gem, "auto drop should refill at least one empty cell")
+	_assert_eq(screen.stage_state.drop_charges_remaining, 1, "auto drop should not consume drop charges")
+	screen.free()
+	await process_frame
+
 func _test_end_run_waits_during_resolution() -> void:
 	var screen = await _create_stage_screen()
 	screen.stage_state.moves_remaining = 0
@@ -235,6 +302,31 @@ func _test_gem_visual_size_shrinks_on_large_board() -> void:
 	var view = screen.gem_views[0][0]
 	_assert_true(view != null, "large board should still create gem views")
 	_assert_true(view.size.x < screen.tile_size, "gem visuals should be smaller than the tile on large boards")
+	screen.free()
+	await process_frame
+
+func _test_debug_helpers_can_force_relic_and_single_color() -> void:
+	var screen = await _create_stage_screen()
+	screen.debug_add_relic("relic_no_reshuffle")
+	_assert_true(screen.run_state.relic_ids.has("relic_no_reshuffle"), "debug relic helper should add relics")
+
+	screen.board_state.set_gem(0, 0, GemInstance_.new("blue"))
+	screen.board_state.set_gem(1, 0, GemInstance_.new("green"))
+	screen.deck_state = DeckState_.new([GemInstance_.new("purple"), GemInstance_.new("yellow")])
+	screen.debug_set_all_gems_to_color("red")
+
+	_assert_eq(screen.board_state.get_gem(0, 0).definition_id, "red", "debug single-color helper should recolor board gems")
+	_assert_eq(screen.board_state.get_gem(1, 0).definition_id, "red", "debug single-color helper should recolor all board gems")
+	_assert_eq(screen.deck_state.draw_pile[0].definition_id, "red", "debug single-color helper should recolor draw pile gems")
+	_assert_eq(screen.deck_state.draw_pile[1].definition_id, "red", "debug single-color helper should recolor draw pile gems")
+	screen.free()
+	await process_frame
+
+func _test_debug_enable_auto_drop_seal_helper() -> void:
+	var screen = await _create_stage_screen()
+	screen.debug_enable_auto_drop_seal()
+	_assert_true(screen.run_state.relic_ids.has("relic_no_reshuffle"), "debug auto drop helper should enable the relic")
+	_assert_true(screen.drop_button.disabled, "debug auto drop helper should immediately update the HUD state")
 	screen.free()
 	await process_frame
 

@@ -150,6 +150,46 @@ func initialize_stage(run: Object, deck: Object, plan: Object) -> void:
 		
 	print("[StagePlayScreen] Initialization complete for stage %d." % plan.stage_index)
 
+func debug_add_relic(relic_id: String) -> void:
+	if run_state == null:
+		return
+	run_state.add_relic(relic_id)
+	update_relics()
+	update_hud()
+
+func debug_enable_auto_drop_seal() -> void:
+	debug_add_relic("relic_no_reshuffle")
+
+func debug_set_all_gems_to_color(color_id: String, include_coats: bool = false) -> void:
+	if board_state == null or deck_state == null:
+		return
+
+	for y in range(board_state.height):
+		for x in range(board_state.width):
+			var gem = board_state.get_gem(x, y)
+			if gem == null or gem.is_stone():
+				continue
+			gem.definition_id = color_id
+			if not include_coats:
+				gem.coat_ids.clear()
+
+	for gem in deck_state.draw_pile:
+		if gem == null or gem.is_stone():
+			continue
+		gem.definition_id = color_id
+		if not include_coats:
+			gem.coat_ids.clear()
+
+	for gem in deck_state.discard_pile:
+		if gem == null or gem.is_stone():
+			continue
+		gem.definition_id = color_id
+		if not include_coats:
+			gem.coat_ids.clear()
+
+	update_all_views()
+	update_deck_ui()
+
 func update_deck_ui() -> void:
 	draw_label.text = "Draw: %d" % deck_state.draw_pile.size()
 	discard_label.text = "Discard: %d" % deck_state.discard_pile.size()
@@ -162,10 +202,9 @@ func update_hud() -> void:
 	score_label.text = "Score: %d / %d" % [stage_state.score, stage_state.target_score]
 	moves_label.text = "Moves: %d" % stage_state.moves_remaining
 	gold_label.text = "Gold: %d" % run_state.gold
-	drop_button.text = "Drop: %d" % stage_state.drop_charges_remaining
-	# Drop is allowed even when moves are exhausted, as long as empty cells remain.
-	# The game-over check handles the case where both moves and drops are unavailable.
-	drop_button.disabled = is_animating or stage_state.drop_charges_remaining <= 0 or not board_state.has_empty_cells()
+	var has_auto_drop = run_state.relic_ids.has("relic_no_reshuffle")
+	drop_button.text = "Drop: %s" % ("∞" if has_auto_drop else str(stage_state.drop_charges_remaining))
+	drop_button.disabled = is_animating or not board_state.has_empty_cells() or stage_state.drop_charges_remaining <= 0 or has_auto_drop
 	
 	score_gauge.max_value = stage_state.target_score
 	score_gauge.value = min(stage_state.score, stage_state.target_score)
@@ -198,6 +237,7 @@ func _get_relic_description(id: String) -> String:
 		"relic_beam_range": return "Lens Scope: Diagonal beams reach 1 tile farther."
 		"relic_rocket_range": return "Nozzle Extender: Rockets reach 1 tile farther."
 		"relic_bomb_diagonal": return "Shrapnel Core: Bombs also hit diagonals."
+		"relic_no_reshuffle": return "Auto Drop Seal: Drop triggers automatically while the board has empty cells. The discard pile never reshuffles back into the draw pile."
 	return "No description available."
 
 func show_announcement(label: Label, text: String, sub_text: String = "") -> void:
@@ -238,7 +278,7 @@ func initial_refill() -> void:
 	var iterations = 0
 	while iterations < max_iterations:
 		iterations += 1
-		CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+		CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate, run_state.relic_ids)
 		var matches = MatchResolver_.find_matches(board_state)
 		if matches.size() == 0:
 			break
@@ -579,14 +619,34 @@ func resolve_board(allow_refill: bool) -> void:
 		await animate_movements(movements)
 		update_all_views()
 		
-		if allow_refill:
-			var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+		if allow_refill and not run_state.relic_ids.has("relic_no_reshuffle"):
+			var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate, run_state.relic_ids)
 			await animate_spawns(spawns)
 			
 			update_all_views()
 
 	resolution_in_progress = false
+	if run_state.relic_ids.has("relic_no_reshuffle") and stage_state != null and board_state.has_empty_cells() and deck_state.draw_pile.size() > 0:
+		await _auto_drop_refill(true)
 	check_game_end()
+
+func _auto_drop_refill(force: bool = false) -> void:
+	if (is_animating and not force) or stage_state == null or run_state == null:
+		return
+	if not board_state.has_empty_cells() or deck_state.draw_pile.size() <= 0:
+		return
+
+	is_animating = true
+	update_hud()
+
+	var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate, run_state.relic_ids)
+	await animate_spawns(spawns)
+
+	update_all_views()
+	await resolve_board(false)
+
+	is_animating = false
+	update_hud()
 
 func check_game_end() -> void:
 	if run_finished:
@@ -627,7 +687,8 @@ func _on_drop_pressed() -> void:
 		return
 	if not board_state.has_empty_cells():
 		return
-
+	if run_state.relic_ids.has("relic_no_reshuffle"):
+		return
 	if selected_pos != null and gem_views[selected_pos.y][selected_pos.x]:
 		gem_views[selected_pos.y][selected_pos.x].set_highlight(false)
 	selected_pos = null
@@ -635,7 +696,7 @@ func _on_drop_pressed() -> void:
 	stage_state.drop_charges_remaining -= 1
 	update_hud()
 
-	var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate)
+	var spawns = CascadeResolver_.refill_from_deck(board_state, deck_state, stage_state.obstacle_rate, run_state.relic_ids)
 	await animate_spawns(spawns)
 
 	update_all_views()
