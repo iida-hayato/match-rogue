@@ -668,9 +668,9 @@ func _should_end_run() -> bool:
 	if stage_state.score >= stage_state.target_score:
 		return false
 	if run_state.relic_ids.has("relic_auto_drop_seal"):
-		if board_state.has_empty_cells():
-			return deck_state.draw_pile.size() <= 0
-		return false
+		if not board_state.has_empty_cells():
+			return true
+		return deck_state.draw_pile.size() <= 0
 	if stage_state.drop_charges_remaining <= 0:
 		return true
 	return not board_state.has_empty_cells()

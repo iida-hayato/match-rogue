@@ -29,6 +29,7 @@ func _run_tests() -> void:
 	await _test_auto_drop_relic_does_not_auto_refill_without_relic()
 	await _test_auto_drop_relic_refills_without_consuming_charge()
 	await _test_auto_drop_relic_waits_for_draw_pile_then_ends()
+	await _test_auto_drop_relic_ends_when_board_is_full_and_moves_zero()
 	await _test_end_run_waits_during_resolution()
 	await _test_gem_visual_size_shrinks_on_large_board()
 	await _test_debug_helpers_can_force_relic_and_single_color()
@@ -291,6 +292,21 @@ func _test_auto_drop_relic_waits_for_draw_pile_then_ends() -> void:
 	screen.deck_state.draw_pile.clear()
 	screen.update_hud()
 	_assert_true(screen._should_end_run(), "auto drop relic should end once draw pile is empty and moves are exhausted")
+	screen.free()
+	await process_frame
+
+func _test_auto_drop_relic_ends_when_board_is_full_and_moves_zero() -> void:
+	var screen = await _create_stage_screen()
+	screen.run_state.add_relic("relic_auto_drop_seal")
+	screen.stage_state.moves_remaining = 0
+	screen.stage_state.drop_charges_remaining = 0
+	screen.deck_state = DeckState_.new([GemInstance_.new("blue")])
+	for y in range(screen.board_state.height):
+		for x in range(screen.board_state.width):
+			screen.board_state.set_gem(x, y, GemInstance_.new("red"))
+	screen.update_hud()
+
+	_assert_true(screen._should_end_run(), "auto drop relic should not keep the run alive when the board is already full")
 	screen.free()
 	await process_frame
 
