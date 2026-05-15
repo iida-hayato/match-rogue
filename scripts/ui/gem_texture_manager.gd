@@ -33,7 +33,7 @@ static var relics = {
 	"relic_beam_range": preload("res://assets/textures/relics/relic_beam_range.svg"),
 	"relic_rocket_range": preload("res://assets/textures/relics/relic_rocket_range.svg"),
 	"relic_bomb_diagonal": preload("res://assets/textures/relics/relic_bomb_diagonal.svg"),
-	"relic_auto_drop_seal": preload("res://assets/textures/relics/relic_auto_drop_seal.svg"),
+	"relic_auto_drop_seal": preload("res://assets/textures/relics/relic_shop.svg"),
 }
 
 static func get_gem_texture(id: String) -> Texture2D:
