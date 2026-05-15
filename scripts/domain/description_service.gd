@@ -12,7 +12,7 @@ static func get_relic_description(id: String) -> String:
 		"relic_beam_range": return _wrap_tooltip("Lens Scope: Diagonal beams reach 1 tile farther.")
 		"relic_rocket_range": return _wrap_tooltip("Nozzle Extender: Rockets reach 1 tile farther.")
 		"relic_bomb_diagonal": return _wrap_tooltip("Shrapnel Core: Bombs also hit diagonals.")
-		"relic_no_reshuffle": return _wrap_tooltip("Auto Drop Seal: Drop triggers automatically while the board has empty cells. The discard pile never reshuffles back into the draw pile.")
+		"relic_auto_drop_seal": return _wrap_tooltip("Auto Drop Seal: Drop triggers automatically while the board has empty cells. The discard pile never reshuffles back into the draw pile.")
 	return "No description available."
 
 static func get_gem_description(gem: Object) -> String:

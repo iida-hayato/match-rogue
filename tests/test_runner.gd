@@ -252,7 +252,7 @@ func _test_auto_drop_relic_does_not_auto_refill_without_relic() -> void:
 
 func _test_auto_drop_relic_refills_without_consuming_charge() -> void:
 	var screen = await _create_stage_screen()
-	screen.run_state.add_relic("relic_no_reshuffle")
+	screen.run_state.add_relic("relic_auto_drop_seal")
 	_clear_board(screen)
 	screen.deck_state = DeckState_.new([GemInstance_.new("red")])
 	screen.stage_state.drop_charges_remaining = 1
@@ -307,8 +307,8 @@ func _test_gem_visual_size_shrinks_on_large_board() -> void:
 
 func _test_debug_helpers_can_force_relic_and_single_color() -> void:
 	var screen = await _create_stage_screen()
-	screen.debug_add_relic("relic_no_reshuffle")
-	_assert_true(screen.run_state.relic_ids.has("relic_no_reshuffle"), "debug relic helper should add relics")
+	screen.debug_add_relic("relic_auto_drop_seal")
+	_assert_true(screen.run_state.relic_ids.has("relic_auto_drop_seal"), "debug relic helper should add relics")
 
 	screen.board_state.set_gem(0, 0, GemInstance_.new("blue"))
 	screen.board_state.set_gem(1, 0, GemInstance_.new("green"))
@@ -325,7 +325,7 @@ func _test_debug_helpers_can_force_relic_and_single_color() -> void:
 func _test_debug_enable_auto_drop_seal_helper() -> void:
 	var screen = await _create_stage_screen()
 	screen.debug_enable_auto_drop_seal()
-	_assert_true(screen.run_state.relic_ids.has("relic_no_reshuffle"), "debug auto drop helper should enable the relic")
+	_assert_true(screen.run_state.relic_ids.has("relic_auto_drop_seal"), "debug auto drop helper should enable the relic")
 	_assert_true(screen.drop_button.disabled, "debug auto drop helper should immediately update the HUD state")
 	screen.free()
 	await process_frame

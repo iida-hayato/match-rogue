@@ -87,7 +87,7 @@ static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
 		{"id": "relic_beam_range", "name": "Precision Lens", "type": "relic", "price": 20},
 		{"id": "relic_rocket_range", "name": "Barrel Extender", "type": "relic", "price": 20},
 		{"id": "relic_bomb_diagonal", "name": "Shrapnel Ring", "type": "relic", "price": 24},
-		{"id": "relic_no_reshuffle", "name": "Auto Drop Seal", "type": "relic", "price": 42}
+		{"id": "relic_auto_drop_seal", "name": "Auto Drop Seal", "type": "relic", "price": 42}
 	]
 	
 	# フィルター

@@ -19,7 +19,7 @@ static func refill_from_deck(board, deck, obstacle_rate: float = 0.0, relic_ids:
 	var spawns = [] # Array of {from: Vector2i, to: Vector2i, gem: GemInstance}
 	var empty_positions: Array[Vector2i] = _get_refill_order(board)
 	var spawn_counts_by_column: Dictionary = {}
-	var allow_reshuffle = not relic_ids.has("relic_no_reshuffle")
+	var allow_reshuffle = not relic_ids.has("relic_auto_drop_seal")
 	for pos in empty_positions:
 		var gem = null
 		if randf() < obstacle_rate:
