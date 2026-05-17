@@ -19,7 +19,7 @@ func _initialize() -> void:
 func _run_tests() -> void:
 	Engine.time_scale = 100.0
 	await _test_match_shape_classification()
-	await _test_initial_deck_has_50_gems()
+	await _test_initial_deck_has_100_gems()
 	await _test_no_special_spawn_without_relic()
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
@@ -27,7 +27,7 @@ func _run_tests() -> void:
 	await _test_line5_relic_priority_beats_line4_when_both_present()
 	await _test_l_shape_triggers_bomb_relic()
 	await _test_shop_generates_two_relics()
-	await _test_shop_generates_three_gem_slots_and_value_bundle()
+	await _test_shop_generates_ten_gem_slots_and_value_bundle()
 	await _test_value_gem_bundle_purchase_adds_five_bonus_gems()
 	await _test_value_bonus_increases_score()
 	await _test_beam_range_relic_extends_diagonal_clear()
@@ -107,11 +107,11 @@ func _test_match_shape_classification() -> void:
 		var actual_shape = MatchResolver_.analyze_shape(board, typed_positions) if test_case.get("expect_direct", false) else MatchResolver_.find_matches(board, test_case.include_boxes)[0].shape
 		_assert_eq(actual_shape, test_case.shape, "shape classification: %s" % test_case.name)
 
-func _test_initial_deck_has_50_gems() -> void:
+func _test_initial_deck_has_100_gems() -> void:
 	var main_scene = MainScene_.new()
 	main_scene.run_state = RunState_.new()
 	main_scene.setup_initial_deck()
-	_assert_eq(main_scene.run_state.master_deck.size(), 50, "initial deck should contain 50 gems")
+	_assert_eq(main_scene.run_state.master_deck.size(), 100, "initial deck should contain 100 gems")
 
 func _test_special_gem_persists_after_creation() -> void:
 	var screen = await _create_stage_screen()
@@ -250,7 +250,7 @@ func _test_shop_generates_two_relics() -> void:
 	_assert_true(not relic_ids.has("relic_mining"), "owned relics should be excluded from shop relic pool")
 	_assert_true(relic_ids[0] != relic_ids[1], "shop relics should not duplicate in the same inventory")
 
-func _test_shop_generates_three_gem_slots_and_value_bundle() -> void:
+func _test_shop_generates_ten_gem_slots_and_value_bundle() -> void:
 	var run_state = RunState_.new()
 	var inventory = ShopGenerator_.generate_shop_inventory(run_state)
 	var gem_items: Array[Dictionary] = []
@@ -260,7 +260,7 @@ func _test_shop_generates_three_gem_slots_and_value_bundle() -> void:
 			gem_items.append(item)
 		if item.type == "value_gem_bundle":
 			value_bundle_count += 1
-	_assert_eq(gem_items.size(), 4, "shop should generate three gem slots plus one value bundle")
+	_assert_eq(gem_items.size(), 11, "shop should generate ten gem slots plus one value bundle")
 	_assert_eq(value_bundle_count, 1, "shop should generate exactly one value bundle")
 
 func _test_value_bonus_increases_score() -> void:

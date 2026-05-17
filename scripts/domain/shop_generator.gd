@@ -3,10 +3,9 @@ extends RefCounted
 static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
 	var inventory := get_persistent_shop_items(run_state)
 	
-	# Gem x3 (normal or special)
-	inventory.append(generate_gem_item())
-	inventory.append(generate_gem_item())
-	inventory.append(generate_gem_item())
+	# Gem x10 (normal or special)
+	for _i in range(10):
+		inventory.append(generate_gem_item())
 	
 	# Value bundle: a strong baseline upgrade
 	inventory.append(generate_value_gem_bundle())
