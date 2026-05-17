@@ -19,7 +19,7 @@ func _initialize() -> void:
 func _run_tests() -> void:
 	Engine.time_scale = 100.0
 	await _test_match_shape_classification()
-	await _test_initial_deck_has_35_gems()
+	await _test_initial_deck_has_50_gems()
 	await _test_no_special_spawn_without_relic()
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
@@ -107,11 +107,11 @@ func _test_match_shape_classification() -> void:
 		var actual_shape = MatchResolver_.analyze_shape(board, typed_positions) if test_case.get("expect_direct", false) else MatchResolver_.find_matches(board, test_case.include_boxes)[0].shape
 		_assert_eq(actual_shape, test_case.shape, "shape classification: %s" % test_case.name)
 
-func _test_initial_deck_has_35_gems() -> void:
+func _test_initial_deck_has_50_gems() -> void:
 	var main_scene = MainScene_.new()
 	main_scene.run_state = RunState_.new()
 	main_scene.setup_initial_deck()
-	_assert_eq(main_scene.run_state.master_deck.size(), 35, "initial deck should contain 35 gems")
+	_assert_eq(main_scene.run_state.master_deck.size(), 50, "initial deck should contain 50 gems")
 
 func _test_special_gem_persists_after_creation() -> void:
 	var screen = await _create_stage_screen()
