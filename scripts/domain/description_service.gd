@@ -53,7 +53,7 @@ static func get_item_description(item: Dictionary) -> String:
 			max_state
 		])
 	if item.type == "value_gem_bundle":
-		return _wrap_tooltip("Value Gem Bundle: Add %d normal gems with Value +%d." % [
+		return _wrap_tooltip("Value Gem Bundle: Add %d gems of one color with Value +%d." % [
 			int(item.get("bundle_count", 5)),
 			int(item.get("value_bonus", 5))
 		])

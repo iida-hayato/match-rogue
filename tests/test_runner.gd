@@ -23,12 +23,15 @@ func _run_tests() -> void:
 	await _test_no_special_spawn_without_relic()
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
+	await _test_normal_clear_awards_score()
+	await _test_gem_view_shows_per_gem_value_bonus()
+	await _test_gem_view_shows_base_value_for_normal_gems()
 	await _test_beam_spawn_requires_prism_secret()
 	await _test_line5_relic_priority_beats_line4_when_both_present()
 	await _test_l_shape_triggers_bomb_relic()
 	await _test_shop_generates_two_relics()
-	await _test_shop_generates_ten_gem_slots_and_value_bundle()
-	await _test_value_gem_bundle_purchase_adds_five_bonus_gems()
+	await _test_shop_generates_three_special_gem_slots_and_value_bundle()
+	await _test_value_gem_bundle_purchase_adds_ten_bonus_gems()
 	await _test_value_bonus_increases_score()
 	await _test_beam_range_relic_extends_diagonal_clear()
 	await _test_rocket_range_relic_extends_line_clear()
@@ -169,6 +172,51 @@ func _test_special_gem_triggers_on_next_chain() -> void:
 	for pos in diagonal_survivors:
 		_assert_true(not (pos in effect_positions), "bomb gem should not include diagonal cell %s" % str(pos))
 
+func _test_normal_clear_awards_score() -> void:
+	var screen = await _create_stage_screen()
+	_clear_board(screen)
+	screen.board_state.set_gem(0, 7, GemInstance_.new("red"))
+	screen.board_state.set_gem(1, 7, GemInstance_.new("red"))
+	screen.board_state.set_gem(2, 7, GemInstance_.new("red"))
+	screen.update_all_views()
+
+	await screen.resolve_board(false)
+
+	_assert_true(screen.stage_state.score > 0, "normal gem clear should award score")
+	_assert_true(screen.run_state.total_score > 0, "run total score should increase on normal clear")
+	screen.free()
+	await process_frame
+
+func _test_gem_view_shows_per_gem_value_bonus() -> void:
+	var scene = load("res://scenes/components/gem_view.tscn")
+	var view = scene.instantiate()
+	root.add_child(view)
+	await process_frame
+
+	var normal_gem = GemInstance_.new("red")
+	view.setup_gem(normal_gem)
+	_assert_true(not view.get_node("ValueLabel").visible, "normal gem should not show a value label")
+
+	var bonus_gem = GemInstance_.new("blue")
+	bonus_gem.value_bonus = 5
+	view.setup_gem(bonus_gem)
+	_assert_true(view.get_node("ValueLabel").visible, "bonus gem should show a value label")
+	_assert_eq(view.get_node("ValueLabel").text, "+5", "bonus gem should show its own value bonus")
+	view.free()
+	await process_frame
+
+func _test_gem_view_shows_base_value_for_normal_gems() -> void:
+	var scene = load("res://scenes/components/gem_view.tscn")
+	var view = scene.instantiate()
+	root.add_child(view)
+	await process_frame
+
+	var normal_gem = GemInstance_.new("red")
+	view.setup_gem(normal_gem)
+	_assert_true(not view.get_node("ValueLabel").visible, "normal gem should not show a value label")
+	view.free()
+	await process_frame
+
 func _test_beam_spawn_requires_prism_secret() -> void:
 	var screen = await _create_stage_screen()
 	screen.run_state.add_relic("relic_prism_secret")
@@ -250,18 +298,21 @@ func _test_shop_generates_two_relics() -> void:
 	_assert_true(not relic_ids.has("relic_mining"), "owned relics should be excluded from shop relic pool")
 	_assert_true(relic_ids[0] != relic_ids[1], "shop relics should not duplicate in the same inventory")
 
-func _test_shop_generates_ten_gem_slots_and_value_bundle() -> void:
+func _test_shop_generates_three_special_gem_slots_and_value_bundle() -> void:
 	var run_state = RunState_.new()
 	var inventory = ShopGenerator_.generate_shop_inventory(run_state)
-	var gem_items: Array[Dictionary] = []
-	var value_bundle_count := 0
+	var special_slot_count := 0
 	for item in inventory:
-		if item.type == "normal_gem" or item.type == "special_gem" or item.type == "value_gem_bundle":
-			gem_items.append(item)
-		if item.type == "value_gem_bundle":
-			value_bundle_count += 1
-	_assert_eq(gem_items.size(), 11, "shop should generate ten gem slots plus one value bundle")
-	_assert_eq(value_bundle_count, 1, "shop should generate exactly one value bundle")
+		if item.type == "special_gem" or item.type == "value_gem_bundle":
+			special_slot_count += 1
+	_assert_eq(special_slot_count, 3, "shop should generate three special gem slots")
+
+	var saw_value_bundle := false
+	for _i in range(200):
+		if ShopGenerator_.generate_special_gem().type == "value_gem_bundle":
+			saw_value_bundle = true
+			break
+	_assert_true(saw_value_bundle, "special gem pool should include the value bundle")
 
 func _test_value_bonus_increases_score() -> void:
 	var gem = GemInstance_.new("red")
@@ -270,14 +321,17 @@ func _test_value_bonus_increases_score() -> void:
 	_assert_eq(result["base"], 10, "value bonus should add to the base score value")
 	_assert_true(result["delta"] > 5, "value bonus should increase the final score")
 
-func _test_value_gem_bundle_purchase_adds_five_bonus_gems() -> void:
+func _test_value_gem_bundle_purchase_adds_ten_bonus_gems() -> void:
 	var screen = await _create_shop_screen()
 	var bundle = ShopGenerator_.generate_value_gem_bundle()
 	screen.apply_purchase(bundle)
 
-	_assert_eq(screen.run_state.master_deck.size(), 5, "value bundle should add five gems")
+	_assert_eq(screen.run_state.master_deck.size(), 10, "value bundle should add ten gems")
+	var colors := {}
 	for gem in screen.run_state.master_deck:
 		_assert_eq(gem.value_bonus, 5, "value bundle gems should carry +5 value")
+		colors[gem.definition_id] = true
+	_assert_eq(colors.size(), 1, "value bundle should add one color only")
 	screen.free()
 	await process_frame
 

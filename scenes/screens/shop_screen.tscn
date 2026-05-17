@@ -37,6 +37,19 @@ layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 0
 
+[node name="ItemsScroll" type="ScrollContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 240)
+
+[node name="ItemsContainer" type="GridContainer" parent="MarginContainer/VBox/ItemsScroll"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
 [node name="Title" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
@@ -49,13 +62,6 @@ theme_override_colors/font_color = Color(1, 0.9, 0, 1)
 theme_override_font_sizes/font_size = 42
 text = "Gold: 100"
 horizontal_alignment = 1
-
-[node name="ItemsContainer" type="GridContainer" parent="MarginContainer/VBox"]
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 3
 
 [node name="NextStageInfo" type="Label" parent="MarginContainer/VBox"]
 layout_mode = 2

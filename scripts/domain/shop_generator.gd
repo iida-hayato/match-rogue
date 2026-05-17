@@ -3,12 +3,9 @@ extends RefCounted
 static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
 	var inventory := get_persistent_shop_items(run_state)
 	
-	# Gem x10 (normal or special)
-	for _i in range(10):
-		inventory.append(generate_gem_item())
-	
-	# Value bundle: a strong baseline upgrade
-	inventory.append(generate_value_gem_bundle())
+	# Special Gem x3
+	for _i in range(3):
+		inventory.append(generate_special_gem())
 	
 	# レリック x2 (取得済みは除外)
 	var owned_relics = run_state.relic_ids.duplicate()
@@ -69,41 +66,31 @@ static func _create_board_upgrade_item(
 	}
 
 static func generate_special_gem() -> Dictionary:
+	var colors = ["red", "blue", "green", "yellow", "purple"]
+	var bundle_color = colors[randi() % colors.size()]
 	var items = [
 		{"id": "rocket_v", "name": "V-Rocket (Red)", "type": "special_gem", "color": "red", "effect": "rocket_v", "price": 10},
 		{"id": "rocket_h", "name": "H-Rocket (Blue)", "type": "special_gem", "color": "blue", "effect": "rocket_h", "price": 10},
 		{"id": "bomb", "name": "Bomb (Yellow)", "type": "special_gem", "color": "yellow", "effect": "bomb", "price": 12},
 		{"id": "beam", "name": "Beam (Purple)", "type": "special_gem", "color": "purple", "effect": "beam", "price": 12},
-		{"id": "coin_gem", "name": "Coin Gem (Green)", "type": "special_gem", "color": "green", "effect": "coin", "price": 8}
+		{"id": "coin_gem", "name": "Coin Gem (Green)", "type": "special_gem", "color": "green", "effect": "coin", "price": 8},
+		_create_value_gem_bundle_item(bundle_color)
 	]
 	return items[randi() % items.size()]
 
-static func generate_normal_gem() -> Dictionary:
+static func generate_value_gem_bundle() -> Dictionary:
 	var colors = ["red", "blue", "green", "yellow", "purple"]
 	var color = colors[randi() % colors.size()]
-	var value_bonus = 0
-	return {
-		"id": "gem_%s" % color,
-		"name": "%s Gem" % color.capitalize(),
-		"type": "normal_gem",
-		"color": color,
-		"value_bonus": value_bonus,
-		"price": 6
-	}
+	return _create_value_gem_bundle_item(color)
 
-static func generate_gem_item() -> Dictionary:
-	if randf() < 0.5:
-		return generate_normal_gem()
-	return generate_special_gem()
-
-static func generate_value_gem_bundle() -> Dictionary:
+static func _create_value_gem_bundle_item(color: String) -> Dictionary:
 	return {
 		"id": "value_gem_bundle",
 		"name": "Value Gem Bundle",
 		"type": "value_gem_bundle",
-		"color": "yellow",
+		"color": color,
 		"value_bonus": 5,
-		"bundle_count": 5,
+		"bundle_count": 10,
 		"price": 34
 	}
 

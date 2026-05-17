@@ -406,18 +406,25 @@ func animate_swap(p1: Vector2i, p2: Vector2i) -> void:
 	v1.board_pos = p2
 	v2.board_pos = p1
 
-func _spawn_score_popups(positions: Array, value_per_gem: int) -> void:
-	if value_per_gem <= 0: return
-	
-	for pos in positions:
+func _spawn_score_popups(positions: Array, cleared_gems: Array) -> void:
+	if positions.is_empty() or cleared_gems.is_empty():
+		return
+
+	var popup_count = min(positions.size(), cleared_gems.size())
+	for i in range(popup_count):
+		var gem = cleared_gems[i]
+		if gem == null or gem.is_stone():
+			continue
+
+		var value = 5 + int(gem.value_bonus)
 		var label = Label.new()
-		label.text = str(value_per_gem)
+		label.text = str(value)
 		label.add_theme_font_size_override("font_size", int(clamp(tile_size * 0.65, 18.0, 32.0)))
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
 		label.add_theme_constant_override("outline_size", int(clamp(tile_size * 0.12, 3.0, 6.0)))
 		
 		board_view.add_child(label)
-		label.position = _board_position_for_cell(pos) + Vector2(tile_size * 0.3, 0)
+		label.position = _board_position_for_cell(positions[i]) + Vector2(tile_size * 0.2, 0)
 		
 		var tween = create_tween().set_parallel(true)
 		tween.tween_property(label, "position:y", label.position.y - max(28.0, tile_size), 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -594,20 +601,20 @@ func resolve_board(allow_refill: bool) -> void:
 			if board_state.get_gem(spawn_pos.x, spawn_pos.y) == null:
 				board_state.set_gem(spawn_pos.x, spawn_pos.y, spawn_gem)
 				_create_gem_view_at_position(spawn_pos, spawn_gem)
+
+		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
+		stage_state.score += score_result["delta"]
 		
-			var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
-			stage_state.score += score_result["delta"]
-			
-			run_state.total_score += score_result["delta"]
-			run_state.total_gems_cleared += cleared_gems.size()
-			run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
-			run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
-			
-			if cleared_gems.size() > 0:
-				_spawn_score_popups(all_cleared_positions, score_result["delta"] / max(1, all_cleared_positions.size()))
-			
-			if stage_state.chain_index > 0:
-				show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result["delta"])
+		run_state.total_score += score_result["delta"]
+		run_state.total_gems_cleared += cleared_gems.size()
+		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
+		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
+		
+		if cleared_gems.size() > 0:
+			_spawn_score_popups(all_cleared_positions, cleared_gems)
+		
+		if stage_state.chain_index > 0:
+			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result["delta"])
 			
 		stage_state.chain_index += 1
 		resolution_steps += 1

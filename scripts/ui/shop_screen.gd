@@ -13,7 +13,7 @@ const DescriptionService_ = preload("res://scripts/domain/description_service.gd
 @onready var gold_label: Label = $MarginContainer/VBox/GoldLabel
 @onready var next_stage_info: Label = $MarginContainer/VBox/NextStageInfo
 @onready var next_button: Button = $MarginContainer/VBox/NextButton
-@onready var items_container: GridContainer = $MarginContainer/VBox/ItemsContainer
+@onready var items_container: GridContainer = $MarginContainer/VBox/ItemsScroll/ItemsContainer
 
 @onready var detail_overlay: ColorRect = $ItemDetailOverlay
 @onready var detail_name: Label = $ItemDetailOverlay/Panel/VBox/NameLabel
@@ -67,9 +67,13 @@ func _build_shop_layout() -> void:
 	sidebar.add_theme_constant_override("separation", 14)
 	main_layout.add_child(sidebar)
 
-	main_vbox.remove_child(items_container)
-	items_column.add_child(items_container)
+	var items_scroll = $MarginContainer/VBox/ItemsScroll
+	main_vbox.remove_child(items_scroll)
+	items_column.add_child(items_scroll)
+	items_scroll.size_flags_horizontal = SIZE_EXPAND_FILL
+	items_scroll.size_flags_vertical = SIZE_EXPAND_FILL
 	items_container.size_flags_horizontal = SIZE_EXPAND_FILL
+	items_container.size_flags_vertical = SIZE_EXPAND_FILL
 
 	main_vbox.remove_child(next_stage_info)
 	sidebar.add_child(next_stage_info)
@@ -147,19 +151,20 @@ func update_ui(next_plan: Object) -> void:
 		var panel = PanelContainer.new()
 		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		panel.gui_input.connect(_on_item_panel_input.bind(item, price))
-		panel.custom_minimum_size = Vector2(176, 188)
+		panel.custom_minimum_size = Vector2(156, 182)
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.add_theme_constant_override("separation", 4)
 		panel.add_child(vbox)
 		
 		# Item Texture
-		var icon_container = CenterContainer.new()
-		icon_container.custom_minimum_size = Vector2(64, 64)
+		var icon_container = Control.new()
+		icon_container.custom_minimum_size = Vector2(56, 56)
+		icon_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		vbox.add_child(icon_container)
 
 		var tex_rect = TextureRect.new()
-		tex_rect.custom_minimum_size = Vector2(64, 64)
+		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_container.add_child(tex_rect)
@@ -171,29 +176,29 @@ func update_ui(next_plan: Object) -> void:
 			var effect_id = item.get("effect", "")
 			if effect_id != "":
 				tex_rect.texture = GemTextureManager_.get_effect_texture(effect_id)
-		elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "normal_gem" or item.type == "value_gem_bundle":
-			_render_gem_item(tex_rect, item)
+		elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "value_gem_bundle":
+			_render_gem_item(icon_container, tex_rect, item)
 		elif item.type == "relic":
 			tex_rect.texture = GemTextureManager_.get_relic_texture(item.id)
 		
 		var name_label = Label.new()
 		name_label.text = item.name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 18)
+		name_label.add_theme_font_size_override("font_size", 17)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(name_label)
 		
 		var price_label = Label.new()
 		price_label.text = "MAX" if item.get("maxed", false) else "%dG" % price
 		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price_label.add_theme_font_size_override("font_size", 22)
+		price_label.add_theme_font_size_override("font_size", 20)
 		price_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8) if item.get("maxed", false) else Color.YELLOW)
 		vbox.add_child(price_label)
 		
 		var buy_btn = Button.new()
 		buy_btn.text = "BUY"
-		buy_btn.custom_minimum_size = Vector2(0, 40)
-		buy_btn.add_theme_font_size_override("font_size", 17)
+		buy_btn.custom_minimum_size = Vector2(0, 36)
+		buy_btn.add_theme_font_size_override("font_size", 16)
 		buy_btn.disabled = item.get("maxed", false) or run_state.gold < price
 		buy_btn.pressed.connect(_on_buy_pressed.bind(item, price))
 		vbox.add_child(buy_btn)
@@ -251,8 +256,8 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 			detail_icon.texture = GemTextureManager_.get_effect_texture(effect_id)
 		else:
 			detail_icon.texture = null
-	elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "normal_gem" or item.type == "value_gem_bundle":
-		_render_gem_item(detail_icon, item)
+	elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "value_gem_bundle":
+		_render_gem_item(detail_icon, detail_icon, item)
 	elif item.type == "relic":
 		detail_icon.texture = GemTextureManager_.get_relic_texture(item.id)
 	else:
@@ -287,13 +292,10 @@ func apply_purchase(item: Dictionary) -> void:
 			var gem = GemInstance_.new(item.color)
 			gem.add_coat(item.effect)
 			run_state.master_deck.append(gem)
-		"normal_gem":
-			var normal_gem = GemInstance_.new(item.color)
-			normal_gem.value_bonus = int(item.get("value_bonus", 0))
-			run_state.master_deck.append(normal_gem)
 		"value_gem_bundle":
+			var colors = [item.color]
 			for _i in range(int(item.get("bundle_count", 5))):
-				var value_gem = GemInstance_.new(item.color)
+				var value_gem = GemInstance_.new(colors[0])
 				value_gem.value_bonus = int(item.get("value_bonus", 5))
 				run_state.master_deck.append(value_gem)
 		"relic":
@@ -331,11 +333,13 @@ func _refresh_persistent_inventory() -> void:
 			updated_inventory.append(item)
 	current_inventory = updated_inventory
 
-func _render_gem_item(tex_rect: TextureRect, item: Dictionary) -> void:
+func _render_gem_item(icon_container: Control, tex_rect: TextureRect, item: Dictionary) -> void:
+	if item.type == "value_gem_bundle":
+		_render_value_bundle_icon(icon_container, item)
+		return
+
 	var effect_id = item.get("effect", item.get("coat", ""))
 	tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
-	if item.type == "value_gem_bundle":
-		effect_id = "score"
 	if effect_id != "":
 		var overlay = TextureRect.new()
 		overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
@@ -343,3 +347,48 @@ func _render_gem_item(tex_rect: TextureRect, item: Dictionary) -> void:
 		overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tex_rect.add_child(overlay)
+	
+	if item.type == "value_gem_bundle":
+		var value_label = Label.new()
+		value_label.text = "+%d" % int(item.get("value_bonus", 5))
+		value_label.anchor_left = 0.0
+		value_label.anchor_top = 0.0
+		value_label.anchor_right = 1.0
+		value_label.anchor_bottom = 1.0
+		value_label.offset_left = 2
+		value_label.offset_top = 2
+		value_label.offset_right = -2
+		value_label.offset_bottom = -2
+		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		value_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		value_label.add_theme_font_size_override("font_size", 18)
+		value_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+		value_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		value_label.add_theme_constant_override("outline_size", 2)
+		icon_container.add_child(value_label)
+
+func _render_value_bundle_icon(icon_container: Control, item: Dictionary) -> void:
+	var gem_tex = TextureRect.new()
+	gem_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gem_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	gem_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	gem_tex.texture = GemTextureManager_.get_gem_texture(item.color)
+	icon_container.add_child(gem_tex)
+
+	var value_label = Label.new()
+	value_label.text = "+%d" % int(item.get("value_bonus", 5))
+	value_label.anchor_left = 0.0
+	value_label.anchor_top = 0.0
+	value_label.anchor_right = 1.0
+	value_label.anchor_bottom = 1.0
+	value_label.offset_left = 2
+	value_label.offset_top = 2
+	value_label.offset_right = -2
+	value_label.offset_bottom = -2
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	value_label.add_theme_font_size_override("font_size", 18)
+	value_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	value_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	value_label.add_theme_constant_override("outline_size", 2)
+	icon_container.add_child(value_label)
