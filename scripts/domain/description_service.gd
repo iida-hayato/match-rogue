@@ -21,6 +21,10 @@ static func get_gem_description(gem: Object) -> String:
 	if gem.has_method("is_stone") and gem.is_stone():
 		return "Stone Gem: Does not match. Breaks when nearby gems are cleared."
 	
+	var value_bonus = int(gem.value_bonus)
+	if value_bonus != 0:
+		desc += "\nValue: +%d" % value_bonus
+	
 	for coat in gem.coat_ids:
 		desc += "\nEffect: " + get_coat_description(coat)
 	return desc
@@ -48,8 +52,22 @@ static func get_item_description(item: Dictionary) -> String:
 			item.get("max_size", 0),
 			max_state
 		])
+	if item.type == "value_gem_bundle":
+		return _wrap_tooltip("Value Gem Bundle: Add %d normal gems with Value +%d." % [
+			int(item.get("bundle_count", 5)),
+			int(item.get("value_bonus", 5))
+		])
+	if item.type == "normal_gem":
+		var value_bonus = int(item.get("value_bonus", 0))
+		if value_bonus > 0:
+			return _wrap_tooltip("Normal Gem: Adds a normal gem with Value +%d." % value_bonus)
+		return _wrap_tooltip("Normal Gem: Adds a normal gem.")
 	
-	var effect_id = item.get("effect", item.get("coat", ""))
+	var effect_id = ""
+	if item.has("effect"):
+		effect_id = String(item["effect"])
+	elif item.has("coat"):
+		effect_id = String(item["coat"])
 	if effect_id != "":
 		return get_coat_description(effect_id)
 		

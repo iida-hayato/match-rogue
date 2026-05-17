@@ -3,9 +3,13 @@ extends RefCounted
 static func generate_shop_inventory(run_state: Object) -> Array[Dictionary]:
 	var inventory := get_persistent_shop_items(run_state)
 	
-	# 特殊Gem x2
-	inventory.append(generate_special_gem())
-	inventory.append(generate_special_gem())
+	# Gem x3 (normal or special)
+	inventory.append(generate_gem_item())
+	inventory.append(generate_gem_item())
+	inventory.append(generate_gem_item())
+	
+	# Value bundle: a strong baseline upgrade
+	inventory.append(generate_value_gem_bundle())
 	
 	# レリック x2 (取得済みは除外)
 	var owned_relics = run_state.relic_ids.duplicate()
@@ -74,6 +78,35 @@ static func generate_special_gem() -> Dictionary:
 		{"id": "coin_gem", "name": "Coin Gem (Green)", "type": "special_gem", "color": "green", "effect": "coin", "price": 8}
 	]
 	return items[randi() % items.size()]
+
+static func generate_normal_gem() -> Dictionary:
+	var colors = ["red", "blue", "green", "yellow", "purple"]
+	var color = colors[randi() % colors.size()]
+	var value_bonus = 0
+	return {
+		"id": "gem_%s" % color,
+		"name": "%s Gem" % color.capitalize(),
+		"type": "normal_gem",
+		"color": color,
+		"value_bonus": value_bonus,
+		"price": 6
+	}
+
+static func generate_gem_item() -> Dictionary:
+	if randf() < 0.5:
+		return generate_normal_gem()
+	return generate_special_gem()
+
+static func generate_value_gem_bundle() -> Dictionary:
+	return {
+		"id": "value_gem_bundle",
+		"name": "Value Gem Bundle",
+		"type": "value_gem_bundle",
+		"color": "yellow",
+		"value_bonus": 5,
+		"bundle_count": 5,
+		"price": 34
+	}
 
 static func generate_relic(owned_relics: Array[String] = []) -> Dictionary:
 	var pool = [

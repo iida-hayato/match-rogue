@@ -7,7 +7,7 @@ static func calculate_score(cleared_gems: Array, chain_index: int, relic_ids: Ar
 		if gem.is_stone():
 			continue
 		
-		total_base_value += 5
+		total_base_value += 5 + int(gem.value_bonus)
 		matching_gem_count += 1
 	
 	var count_multiplier = _get_clear_count_multiplier(matching_gem_count)

@@ -595,19 +595,19 @@ func resolve_board(allow_refill: bool) -> void:
 				board_state.set_gem(spawn_pos.x, spawn_pos.y, spawn_gem)
 				_create_gem_view_at_position(spawn_pos, spawn_gem)
 		
-		var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
-		stage_state.score += score_result.delta
-		
-		run_state.total_score += score_result.delta
-		run_state.total_gems_cleared += cleared_gems.size()
-		run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
-		run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
-		
-		if cleared_gems.size() > 0:
-			_spawn_score_popups(all_cleared_positions, score_result.delta / max(1, all_cleared_positions.size()))
-		
-		if stage_state.chain_index > 0:
-			show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result.delta)
+			var score_result = ScoreCalculator_.calculate_score(cleared_gems, stage_state.chain_index, run_state.relic_ids)
+			stage_state.score += score_result["delta"]
+			
+			run_state.total_score += score_result["delta"]
+			run_state.total_gems_cleared += cleared_gems.size()
+			run_state.max_chain = max(run_state.max_chain, stage_state.chain_index + 1)
+			run_state.largest_clear = max(run_state.largest_clear, cleared_gems.size())
+			
+			if cleared_gems.size() > 0:
+				_spawn_score_popups(all_cleared_positions, score_result["delta"] / max(1, all_cleared_positions.size()))
+			
+			if stage_state.chain_index > 0:
+				show_announcement(combo_label, "%d COMBO!" % (stage_state.chain_index + 1), "+%d" % score_result["delta"])
 			
 		stage_state.chain_index += 1
 		resolution_steps += 1

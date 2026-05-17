@@ -171,16 +171,8 @@ func update_ui(next_plan: Object) -> void:
 			var effect_id = item.get("effect", "")
 			if effect_id != "":
 				tex_rect.texture = GemTextureManager_.get_effect_texture(effect_id)
-		elif item.type == "special_gem" or item.type == "coated_gem":
-			var effect_id = item.get("effect", item.get("coat", ""))
-			tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
-			if effect_id != "":
-				var overlay = TextureRect.new()
-				overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
-				overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-				overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-				overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-				tex_rect.add_child(overlay)
+		elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "normal_gem" or item.type == "value_gem_bundle":
+			_render_gem_item(tex_rect, item)
 		elif item.type == "relic":
 			tex_rect.texture = GemTextureManager_.get_relic_texture(item.id)
 		
@@ -259,16 +251,8 @@ func _show_item_detail(item: Dictionary, price: int) -> void:
 			detail_icon.texture = GemTextureManager_.get_effect_texture(effect_id)
 		else:
 			detail_icon.texture = null
-	elif item.type == "special_gem" or item.type == "coated_gem":
-		var effect_id = item.get("effect", item.get("coat", ""))
-		detail_icon.texture = GemTextureManager_.get_gem_texture(item.color)
-		if effect_id != "":
-			var overlay = TextureRect.new()
-			overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
-			overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			detail_icon.add_child(overlay)
+	elif item.type == "special_gem" or item.type == "coated_gem" or item.type == "normal_gem" or item.type == "value_gem_bundle":
+		_render_gem_item(detail_icon, item)
 	elif item.type == "relic":
 		detail_icon.texture = GemTextureManager_.get_relic_texture(item.id)
 	else:
@@ -303,6 +287,15 @@ func apply_purchase(item: Dictionary) -> void:
 			var gem = GemInstance_.new(item.color)
 			gem.add_coat(item.effect)
 			run_state.master_deck.append(gem)
+		"normal_gem":
+			var normal_gem = GemInstance_.new(item.color)
+			normal_gem.value_bonus = int(item.get("value_bonus", 0))
+			run_state.master_deck.append(normal_gem)
+		"value_gem_bundle":
+			for _i in range(int(item.get("bundle_count", 5))):
+				var value_gem = GemInstance_.new(item.color)
+				value_gem.value_bonus = int(item.get("value_bonus", 5))
+				run_state.master_deck.append(value_gem)
 		"relic":
 			run_state.add_relic(item.id)
 		"coated_gem":
@@ -337,3 +330,16 @@ func _refresh_persistent_inventory() -> void:
 		if item.type != "board_upgrade":
 			updated_inventory.append(item)
 	current_inventory = updated_inventory
+
+func _render_gem_item(tex_rect: TextureRect, item: Dictionary) -> void:
+	var effect_id = item.get("effect", item.get("coat", ""))
+	tex_rect.texture = GemTextureManager_.get_gem_texture(item.color)
+	if item.type == "value_gem_bundle":
+		effect_id = "score"
+	if effect_id != "":
+		var overlay = TextureRect.new()
+		overlay.texture = GemTextureManager_.get_effect_texture(effect_id)
+		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.add_child(overlay)

@@ -4,9 +4,11 @@ const BoardState_ = preload("res://scripts/domain/board_state.gd")
 const DeckState_ = preload("res://scripts/domain/deck_state.gd")
 const GemInstance_ = preload("res://scripts/domain/gem_instance.gd")
 const MatchResolver_ = preload("res://scripts/domain/match_resolver.gd")
+const MainScene_ = preload("res://scripts/ui/main_scene.gd")
 const ShopGenerator_ = preload("res://scripts/domain/shop_generator.gd")
 const RunState_ = preload("res://scripts/domain/run_state.gd")
 const StageMaster_ = preload("res://scripts/domain/stage_master.gd")
+const ScoreCalculator_ = preload("res://scripts/domain/score_calculator.gd")
 
 var failures: Array[String] = []
 var assertions := 0
@@ -17,6 +19,7 @@ func _initialize() -> void:
 func _run_tests() -> void:
 	Engine.time_scale = 100.0
 	await _test_match_shape_classification()
+	await _test_initial_deck_has_35_gems()
 	await _test_no_special_spawn_without_relic()
 	await _test_special_gem_persists_after_creation()
 	await _test_special_gem_triggers_on_next_chain()
@@ -24,6 +27,9 @@ func _run_tests() -> void:
 	await _test_line5_relic_priority_beats_line4_when_both_present()
 	await _test_l_shape_triggers_bomb_relic()
 	await _test_shop_generates_two_relics()
+	await _test_shop_generates_three_gem_slots_and_value_bundle()
+	await _test_value_gem_bundle_purchase_adds_five_bonus_gems()
+	await _test_value_bonus_increases_score()
 	await _test_beam_range_relic_extends_diagonal_clear()
 	await _test_rocket_range_relic_extends_line_clear()
 	await _test_bomb_diagonal_relic_adds_corner_cells()
@@ -100,6 +106,12 @@ func _test_match_shape_classification() -> void:
 
 		var actual_shape = MatchResolver_.analyze_shape(board, typed_positions) if test_case.get("expect_direct", false) else MatchResolver_.find_matches(board, test_case.include_boxes)[0].shape
 		_assert_eq(actual_shape, test_case.shape, "shape classification: %s" % test_case.name)
+
+func _test_initial_deck_has_35_gems() -> void:
+	var main_scene = MainScene_.new()
+	main_scene.run_state = RunState_.new()
+	main_scene.setup_initial_deck()
+	_assert_eq(main_scene.run_state.master_deck.size(), 35, "initial deck should contain 35 gems")
 
 func _test_special_gem_persists_after_creation() -> void:
 	var screen = await _create_stage_screen()
@@ -237,6 +249,37 @@ func _test_shop_generates_two_relics() -> void:
 	_assert_eq(relic_ids.size(), 2, "shop should generate two relics")
 	_assert_true(not relic_ids.has("relic_mining"), "owned relics should be excluded from shop relic pool")
 	_assert_true(relic_ids[0] != relic_ids[1], "shop relics should not duplicate in the same inventory")
+
+func _test_shop_generates_three_gem_slots_and_value_bundle() -> void:
+	var run_state = RunState_.new()
+	var inventory = ShopGenerator_.generate_shop_inventory(run_state)
+	var gem_items: Array[Dictionary] = []
+	var value_bundle_count := 0
+	for item in inventory:
+		if item.type == "normal_gem" or item.type == "special_gem" or item.type == "value_gem_bundle":
+			gem_items.append(item)
+		if item.type == "value_gem_bundle":
+			value_bundle_count += 1
+	_assert_eq(gem_items.size(), 4, "shop should generate three gem slots plus one value bundle")
+	_assert_eq(value_bundle_count, 1, "shop should generate exactly one value bundle")
+
+func _test_value_bonus_increases_score() -> void:
+	var gem = GemInstance_.new("red")
+	gem.value_bonus = 5
+	var result = ScoreCalculator_.calculate_score([gem], 0)
+	_assert_eq(result["base"], 10, "value bonus should add to the base score value")
+	_assert_true(result["delta"] > 5, "value bonus should increase the final score")
+
+func _test_value_gem_bundle_purchase_adds_five_bonus_gems() -> void:
+	var screen = await _create_shop_screen()
+	var bundle = ShopGenerator_.generate_value_gem_bundle()
+	screen.apply_purchase(bundle)
+
+	_assert_eq(screen.run_state.master_deck.size(), 5, "value bundle should add five gems")
+	for gem in screen.run_state.master_deck:
+		_assert_eq(gem.value_bonus, 5, "value bundle gems should carry +5 value")
+	screen.free()
+	await process_frame
 
 func _test_beam_range_relic_extends_diagonal_clear() -> void:
 	var board = BoardState_.new(7, 7)
@@ -452,6 +495,19 @@ func _create_stage_screen() -> Variant:
 	var deck_state = DeckState_.new([])
 	var stage_plan = StageMaster_.create_plan(0)
 	screen.initialize_stage(run_state, deck_state, stage_plan)
+	await process_frame
+	return screen
+
+func _create_shop_screen() -> Variant:
+	var scene = load("res://scenes/screens/shop_screen.tscn")
+	var screen = scene.instantiate()
+	root.add_child(screen)
+	await process_frame
+
+	var run_state = RunState_.new()
+	var stage_plan = StageMaster_.create_plan(0)
+	var inventory: Array[Dictionary] = []
+	screen.initialize_shop(run_state, stage_plan, inventory)
 	await process_frame
 	return screen
 
