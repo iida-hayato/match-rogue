@@ -67,14 +67,13 @@ static func _create_board_upgrade_item(
 
 static func generate_special_gem() -> Dictionary:
 	var colors = ["red", "blue", "green", "yellow", "purple"]
-	var bundle_color = colors[randi() % colors.size()]
 	var items = [
-		{"id": "rocket_v", "name": "V-Rocket (Red)", "type": "special_gem", "color": "red", "effect": "rocket_v", "price": 10},
-		{"id": "rocket_h", "name": "H-Rocket (Blue)", "type": "special_gem", "color": "blue", "effect": "rocket_h", "price": 10},
-		{"id": "bomb", "name": "Bomb (Yellow)", "type": "special_gem", "color": "yellow", "effect": "bomb", "price": 12},
-		{"id": "beam", "name": "Beam (Purple)", "type": "special_gem", "color": "purple", "effect": "beam", "price": 12},
-		{"id": "coin_gem", "name": "Coin Gem (Green)", "type": "special_gem", "color": "green", "effect": "coin", "price": 8},
-		_create_value_gem_bundle_item(bundle_color)
+		_make_special_gem_item("rocket_v", "V-Rocket", "rocket_v", 10, colors),
+		_make_special_gem_item("rocket_h", "H-Rocket", "rocket_h", 10, colors),
+		_make_special_gem_item("bomb", "Bomb", "bomb", 12, colors),
+		_make_special_gem_item("beam", "Beam", "beam", 12, colors),
+		_make_special_gem_item("coin_gem", "Coin Gem", "coin", 8, colors),
+		_create_value_gem_bundle_item(colors[randi() % colors.size()])
 	]
 	return items[randi() % items.size()]
 
@@ -82,6 +81,17 @@ static func generate_value_gem_bundle() -> Dictionary:
 	var colors = ["red", "blue", "green", "yellow", "purple"]
 	var color = colors[randi() % colors.size()]
 	return _create_value_gem_bundle_item(color)
+
+static func _make_special_gem_item(id: String, base_name: String, effect: String, price: int, colors: Array) -> Dictionary:
+	var color = colors[randi() % colors.size()]
+	return {
+		"id": id,
+		"name": "%s (%s)" % [base_name, color.capitalize()],
+		"type": "special_gem",
+		"color": color,
+		"effect": effect,
+		"price": price
+	}
 
 static func _create_value_gem_bundle_item(color: String) -> Dictionary:
 	return {

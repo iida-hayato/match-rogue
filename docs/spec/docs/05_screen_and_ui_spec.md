@@ -130,7 +130,7 @@ MVP shop layout:
 +----------------------------------------------------------------+
 | Shop after Stage 10 / 14                   Gold: 31             |
 |----------------------------------------------------------------|
-| [Special Gem] [Special Gem] [Relic] [Consumable/Coat]           |
+| [Special Gem] [Special Gem] [Special Gem] [Relic]               |
 |                                                                |
 | Services                                                       |
 | [Remove Gem: 8G] [Reroll: 3G]                                  |
@@ -145,11 +145,14 @@ MVP shop layout:
 
 MVP shop slots:
 
-- special gem x2
+- special gem x3
 - relic x1
 - consumable or coat service x1
 - permanent remove gem service
 - reroll service
+
+Special gems should be sampled from the allowed effect/color combinations rather than being fixed to one color per effect.
+If a special gem is a value bundle, show the value badge on the icon and keep the badge in the top-right corner.
 
 ## Game Over
 

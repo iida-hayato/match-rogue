@@ -31,6 +31,7 @@ func _run_tests() -> void:
 	await _test_l_shape_triggers_bomb_relic()
 	await _test_shop_generates_two_relics()
 	await _test_shop_generates_three_special_gem_slots_and_value_bundle()
+	await _test_special_gems_have_random_colors()
 	await _test_value_gem_bundle_purchase_adds_ten_bonus_gems()
 	await _test_value_bonus_increases_score()
 	await _test_beam_range_relic_extends_diagonal_clear()
@@ -313,6 +314,16 @@ func _test_shop_generates_three_special_gem_slots_and_value_bundle() -> void:
 			saw_value_bundle = true
 			break
 	_assert_true(saw_value_bundle, "special gem pool should include the value bundle")
+
+func _test_special_gems_have_random_colors() -> void:
+	var colors := {}
+	for _i in range(100):
+		var item = ShopGenerator_.generate_special_gem()
+		_assert_true(item.type == "special_gem" or item.type == "value_gem_bundle", "special gem generator should return a valid shop item")
+		if item.type == "special_gem":
+			colors[item.color] = true
+			_assert_true(["red", "blue", "green", "yellow", "purple"].has(item.color), "special gem should use an allowed color")
+	_assert_true(colors.size() > 1, "special gems should not be locked to a single color")
 
 func _test_value_bonus_increases_score() -> void:
 	var gem = GemInstance_.new("red")

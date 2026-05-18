@@ -39,6 +39,9 @@ After clearing, they go to discard and later return through shuffle.
 | purple_diagonal_beam | Purple Diagonal Beam | Purple | Clears both diagonals through its cell |
 | green_coin_gem | Green Coin Gem | Green | Gain +1 gold when cleared, stage cap applies |
 
+Special gem shop entries may be generated from the set of allowed effect/color combinations rather than a fixed color per effect.
+This keeps the shop pool aligned with the actual implementation, where special gem colors can be sampled at random from valid pairs.
+
 ## 2. Coats
 
 A coat is an additional effect attached to a gem instance.
